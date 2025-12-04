@@ -40,7 +40,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      NODE_PATH: /app/node_modules
+      NODE_PATH: /app/node_modules:/app/api_node_modules
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-password}@postgres:5432/HBRC?schema=public
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
