@@ -54,7 +54,7 @@ services:
         echo '📦 Running database migrations...' &&
         npx prisma migrate deploy &&
         echo '✅ Starting application...' &&
-        node dist/src/main.js
+        npm run start:prod
       "
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
