@@ -4,7 +4,83 @@
 
 ---
 
-## الطريقة الأولى: Docker Compose (الأسرع والأسهل) ⭐
+## ✨ الطريقة الموصى بها: GitHub Actions (CI/CD Automation) ⭐
+
+### المميزات:
+- ✅ Deploy تلقائي عند كل push على main branch
+- ✅ بناء الصور على GitHub (مش محتاج resources محلية)
+- ✅ سريع جداً (بدون نقل tar files كبيرة)
+- ✅ Rollback سهل لأي commit سابق
+- ✅ تتبع كامل للـ deployments في GitHub Actions
+
+### الإعداد:
+
+#### 1. أضف الـ Secrets في GitHub:
+
+اذهب إلى: **Repository Settings → Secrets and variables → Actions → New repository secret**
+
+أضف هذه الـ Secrets:
+
+| Secret Name | Value |
+|------------|-------|
+| `VPS_HOST` | `34.71.218.241` |
+| `VPS_USER` | `islam` |
+| `VPS_SSH_KEY` | محتوى ملف `~/.ssh/id_rsa` |
+
+للحصول على SSH Key:
+```bash
+cat ~/.ssh/id_rsa
+# انسخ كل المحتوى (بما فيهم BEGIN و END)
+```
+
+#### 2. تأكد من وجود `.env.production` على السيرفر:
+
+```bash
+ssh -i ~/.ssh/id_rsa islam@34.71.218.241
+
+# أنشئ الملف
+cat > /home/islam/HBRC_MONO/.env.production << 'EOF'
+DB_PASSWORD=your_secure_password_here
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters
+JWT_EXPIRES_IN=7d
+NODE_ENV=production
+EOF
+```
+
+#### 3. Deploy:
+
+```bash
+# اعمل push على main branch
+git add .
+git commit -m "Deploy to production"
+git push origin main
+
+# الـ GitHub Actions هيشتغل تلقائياً!
+```
+
+#### 4. تابع الـ Deployment:
+
+- اذهب إلى تبويب **Actions** في GitHub
+- شوف الـ workflow وهو بيشتغل live
+- لما يخلص، التطبيق هيكون شغال على السيرفر
+
+### المراقبة:
+
+```bash
+# شوف اللوجز
+ssh -i ~/.ssh/id_rsa islam@34.71.218.241
+docker logs -f hbrc-api
+docker logs -f hbrc-web
+
+# شوف حالة الـ containers
+docker ps
+```
+
+📖 **للتفاصيل الكاملة**: شوف [.github/DEPLOYMENT_SETUP.md](.github/DEPLOYMENT_SETUP.md)
+
+---
+
+## الطريقة التانية: Docker Compose يدوي
 
 ### 1. على السيرفر، ثبت Docker و Docker Compose:
 

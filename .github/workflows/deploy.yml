@@ -1,0 +1,207 @@
+name: Build and Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/hbrc
+
+jobs:
+  build-and-push:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for API
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      - name: Extract metadata for Web
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: api
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: web
+          push: true
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "🔐 Logging in to GitHub Container Registry..."
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            echo "📂 Navigating to project directory..."
+            cd /home/islam/HBRC_MONO
+
+            echo "📥 Pulling latest images..."
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:latest
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web:latest
+
+            echo "🔄 Updating docker-compose.yml..."
+            cat > docker-compose.production.yml << 'EOF'
+            version: '3.8'
+
+            services:
+              postgres:
+                image: postgres:16-alpine
+                container_name: hbrc-postgres
+                restart: unless-stopped
+                environment:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+                  POSTGRES_DB: HBRC
+                  PGDATA: /var/lib/postgresql/data/pgdata
+                volumes:
+                  - postgres_data:/var/lib/postgresql/data
+                ports:
+                  - "5433:5432"
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U postgres"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 5
+                networks:
+                  - hbrc-network
+
+              api:
+                image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:latest
+                container_name: hbrc-api
+                restart: unless-stopped
+                depends_on:
+                  postgres:
+                    condition: service_healthy
+                environment:
+                  NODE_ENV: production
+                  PORT: 3000
+                  NODE_PATH: /app/node_modules:/app/api_node_modules
+                  DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-password}@postgres:5432/HBRC?schema=public
+                  JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+                  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+                ports:
+                  - "3000:3000"
+                volumes:
+                  - ./apps/api/prisma:/app/prisma:ro
+                command: >
+                  sh -c "
+                    echo '🚀 Starting HBRC API...' &&
+                    npm run start:prod
+                  "
+                healthcheck:
+                  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                  start_period: 40s
+                networks:
+                  - hbrc-network
+
+              web:
+                image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web:latest
+                container_name: hbrc-web
+                restart: unless-stopped
+                depends_on:
+                  api:
+                    condition: service_healthy
+                environment:
+                  VITE_API_URL: http://api:3000
+                ports:
+                  - "5173:80"
+                healthcheck:
+                  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                  start_period: 10s
+                networks:
+                  - hbrc-network
+
+            volumes:
+              postgres_data:
+                driver: local
+
+            networks:
+              hbrc-network:
+                driver: bridge
+            EOF
+
+            echo "🛑 Stopping old containers..."
+            docker compose -f docker-compose.production.yml --env-file .env.production down
+
+            echo "🚀 Starting new containers..."
+            docker compose -f docker-compose.production.yml --env-file .env.production up -d
+
+            echo "⏳ Waiting for containers to be healthy..."
+            sleep 15
+
+            echo "📊 Container status:"
+            docker ps
+
+            echo "✅ Deployment completed!"
+
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
