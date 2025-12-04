@@ -46,8 +46,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # Copy necessary files from builder
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules/@app
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
 
 # Copy package.json for running migrations
