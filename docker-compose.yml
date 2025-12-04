@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # ================================
+  # PostgreSQL Database
+  # ================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: hbrc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: HBRC
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hbrc-network
+
+  # ================================
+  # NestJS API
+  # ================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: hbrc-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-password}@postgres:5432/HBRC?schema=public
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount prisma directory for migrations
+      - ./apps/api/prisma:/app/prisma:ro
+    command: >
+      sh -c "
+        echo '🚀 Starting HBRC API...' &&
+        echo '📦 Running database migrations...' &&
+        npx prisma migrate deploy &&
+        echo '🌱 Seeding database...' &&
+        npx prisma db seed &&
+        echo '✅ Starting application...' &&
+        node dist/main.js
+      "
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - hbrc-network
+
+  # ================================
+  # Nginx Reverse Proxy (Optional)
+  # ================================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: hbrc-nginx
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - api
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   networks:
+  #     - hbrc-network
+
+# ================================
+# Volumes
+# ================================
+volumes:
+  postgres_data:
+    driver: local
+
+# ================================
+# Networks
+# ================================
+networks:
+  hbrc-network:
+    driver: bridge

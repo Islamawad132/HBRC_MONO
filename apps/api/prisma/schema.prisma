@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+enum CustomerType {
+  INDIVIDUAL   // فرد
+  CORPORATE    // شركة
+  CONSULTANT   // استشاري
+  SPONSOR      // راعي فعالية
+}
+
+// ============================================
+// CUSTOMERS (العملاء الخارجيون)
+// ============================================
+model Customer {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String       // bcrypt hashed
+
+  customerType  CustomerType @default(INDIVIDUAL)
+
+  // بيانات أساسية
+  name          String       // اسم الفرد أو الشركة
+  phone         String
+  address       String?
+
+  // بيانات إضافية للشركات
+  companyName   String?
+  taxNumber     String?
+  contactPerson String?      // المسؤول
+
+  // بيانات إضافية للاستشاريين
+  licenseNumber String?
+  consultingFirm String?
+
+  // Account status
+  isActive      Boolean      @default(true)
+  isVerified    Boolean      @default(false)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("customers")
+}
+
+// ============================================
+// EMPLOYEES (الموظفون الداخليون)
+// ============================================
+model Employee {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String       // bcrypt hashed
+
+  // بيانات شخصية
+  firstName     String
+  lastName      String
+  phone         String?
+
+  // بيانات وظيفية
+  employeeId    String       @unique  // رقم الموظف
+  department    String       // المعامل، الهندسة، المالية، إلخ
+  position      String       // المسمى الوظيفي
+  institute     String?      // المعهد التابع له
+
+  // Account status
+  isActive      Boolean      @default(true)
+
+  // RBAC
+  roleId        String
+  role          Role         @relation(fields: [roleId], references: [id])
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("employees")
+}
+
+// ============================================
+// LEGACY USER MODEL (سيتم حذفه لاحقاً)
+// ============================================
+// TODO: Migrate existing users to Employee table
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  isActive  Boolean  @default(true)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique      // English name
+  nameAr      String?                       // Arabic name (الاسم بالعربي)
+  description String?
+  isAdmin     Boolean          @default(false) // Admin role flag - auto gets all permissions
+  users       User[]
+  employees   Employee[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id            String           @id @default(uuid())
+  name          String           @unique // e.g., "users:create", "users:read", "roles:delete"
+  description   String?                  // English description
+  descriptionAr String?                  // Arabic description (الوصف بالعربي)
+  module        String                   // e.g., "users", "roles", "permissions"
+  action        String                   // e.g., "create", "read", "update", "delete"
+  roles         RolePermission[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
