@@ -45,12 +45,17 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
 # Copy necessary files from builder
+# Copy both root and api node_modules to resolve all dependencies
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./api_node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
 
 # Copy package.json for running migrations
 COPY --chown=nestjs:nodejs apps/api/package*.json ./
+
+# Setup NODE_PATH to find both sets of modules
+ENV NODE_PATH=/app/node_modules:/app/api_node_modules
 
 # Switch to non-root user
 USER nestjs
