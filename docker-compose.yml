@@ -52,9 +52,6 @@ services:
     command: >
       sh -c "
         echo '🚀 Starting HBRC API...' &&
-        echo '📦 Running database migrations...' &&
-        cd /app/api_node_modules/.bin && ./prisma migrate deploy && cd /app &&
-        echo '✅ Starting application...' &&
         npm run start:prod
       "
     healthcheck:
