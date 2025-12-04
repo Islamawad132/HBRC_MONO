@@ -53,7 +53,7 @@ services:
       sh -c "
         echo '🚀 Starting HBRC API...' &&
         echo '📦 Running database migrations...' &&
-        npx prisma migrate deploy &&
+        ./node_modules/.bin/prisma migrate deploy &&
         echo '✅ Starting application...' &&
         npm run start:prod
       "
