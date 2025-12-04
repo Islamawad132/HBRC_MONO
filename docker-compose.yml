@@ -31,7 +31,8 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: Dockerfile
+      target: api
     container_name: hbrc-api
     restart: unless-stopped
     depends_on:
@@ -69,7 +70,8 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile
+      target: web
     container_name: hbrc-web
     restart: unless-stopped
     depends_on:
