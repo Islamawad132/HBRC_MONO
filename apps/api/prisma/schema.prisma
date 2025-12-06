@@ -14,11 +14,99 @@ datasource db {
 // ============================================
 // ENUMS
 // ============================================
+enum UserType {
+  CUSTOMER    // عميل خارجي
+  EMPLOYEE    // موظف داخلي
+  ADMIN       // مدير النظام
+}
+
 enum CustomerType {
   INDIVIDUAL   // فرد
   CORPORATE    // شركة
   CONSULTANT   // استشاري
   SPONSOR      // راعي فعالية
+}
+
+enum AccountStatus {
+  ACTIVE       // نشط
+  INACTIVE     // غير نشط
+  SUSPENDED    // موقوف
+  PENDING      // قيد المراجعة
+}
+
+enum ServiceCategory {
+  LAB_TESTS              // اختبارات المعامل
+  CONSULTANCY            // استشارات هندسية
+  STATIONS_APPROVAL      // اعتماد محطات
+  FIRE_SAFETY            // السلامة من الحريق
+  GREEN_BUILDING         // المباني الخضراء
+  TRAINING               // التدريب
+  SOIL_TESTING           // فحص التربة
+  CONCRETE_TESTING       // فحص الخرسانة
+  STRUCTURAL_REVIEW      // مراجعة إنشائية
+  SEISMIC_ANALYSIS       // التحليل الزلزالي
+  THERMAL_INSULATION     // العزل الحراري
+  ACOUSTIC_TESTING       // الاختبارات الصوتية
+  OTHER                  // أخرى
+}
+
+enum ServiceStatus {
+  ACTIVE       // متاح
+  INACTIVE     // غير متاح
+  ARCHIVED     // مؤرشف
+}
+
+enum PricingType {
+  FIXED        // سعر ثابت
+  VARIABLE     // سعر متغير
+  CUSTOM       // حسب الطلب
+}
+
+enum RequestStatus {
+  DRAFT             // مسودة
+  SUBMITTED         // تم الإرسال
+  UNDER_REVIEW      // قيد المراجعة
+  APPROVED          // تمت الموافقة
+  REJECTED          // مرفوض
+  IN_PROGRESS       // قيد التنفيذ
+  COMPLETED         // مكتمل
+  DELIVERED         // تم التسليم
+  CANCELLED         // ملغي
+  ON_HOLD           // معلق
+}
+
+enum RequestPriority {
+  LOW              // منخفضة
+  MEDIUM           // متوسطة
+  HIGH             // عالية
+  URGENT           // عاجل
+}
+
+enum PaymentStatus {
+  PENDING          // في انتظار الدفع
+  PAID             // تم الدفع
+  PARTIALLY_PAID   // دفع جزئي
+  FAILED           // فشل
+  REFUNDED         // مسترد
+  CANCELLED        // ملغي
+}
+
+enum PaymentMethod {
+  CASH             // نقدي
+  BANK_TRANSFER    // تحويل بنكي
+  CREDIT_CARD      // بطاقة ائتمان
+  FAWRY            // فوري
+  VODAFONE_CASH    // فودافون كاش
+  OTHER            // أخرى
+}
+
+enum InvoiceStatus {
+  DRAFT            // مسودة
+  ISSUED           // صادر
+  SENT             // مرسل
+  PAID             // مدفوع
+  OVERDUE          // متأخر
+  CANCELLED        // ملغي
 }
 
 // ============================================
@@ -46,11 +134,28 @@ model Customer {
   consultingFirm String?
 
   // Account status
-  isActive      Boolean      @default(true)
-  isVerified    Boolean      @default(false)
+  status        AccountStatus @default(ACTIVE)
+  isVerified    Boolean       @default(false)
+  verifiedAt    DateTime?
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  // Preferences
+  language      String        @default("ar")  // ar, en
+  notifications Boolean       @default(true)
+
+  // Profile
+  profileImage  String?       // Path to profile image
+
+  // Metadata
+  lastLoginAt   DateTime?
+  loginCount    Int           @default(0)
+
+  // Relations
+  requests      ServiceRequest[]
+  invoices      Invoice[]
+  payments      Payment[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("customers")
 }
@@ -75,14 +180,28 @@ model Employee {
   institute     String?      // المعهد التابع له
 
   // Account status
-  isActive      Boolean      @default(true)
+  status        AccountStatus @default(ACTIVE)
 
   // RBAC
   roleId        String
-  role          Role         @relation(fields: [roleId], references: [id])
+  role          Role          @relation(fields: [roleId], references: [id])
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  // Preferences
+  language      String        @default("ar")  // ar, en
+  notifications Boolean       @default(true)
+
+  // Profile
+  profileImage  String?       // Path to profile image
+
+  // Metadata
+  lastLoginAt   DateTime?
+  loginCount    Int           @default(0)
+
+  // Relations
+  assignedRequests ServiceRequest[] @relation("AssignedEmployee")
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("employees")
 }
@@ -146,4 +265,819 @@ model RolePermission {
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
+}
+
+// ============================================
+// SERVICES (الخدمات)
+// ============================================
+model Service {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // English name
+  nameAr          String          // Arabic name (الاسم بالعربي)
+  description     String?         // English description
+  descriptionAr   String?         // Arabic description (الوصف بالعربي)
+
+  // Categorization
+  category        ServiceCategory
+  code            String          @unique // e.g., "LAB-001", "CONS-002"
+
+  // Pricing
+  pricingType     PricingType     @default(FIXED)
+  basePrice       Decimal?        @db.Decimal(10, 2) // السعر الأساسي
+  minPrice        Decimal?        @db.Decimal(10, 2) // الحد الأدنى (للأسعار المتغيرة)
+  maxPrice        Decimal?        @db.Decimal(10, 2) // الحد الأقصى (للأسعار المتغيرة)
+  currency        String          @default("EGP")
+
+  // Service Details
+  duration        Int?            // المدة المتوقعة بالأيام
+  requirements    String?         // المستندات المطلوبة
+  requirementsAr  String?         // المستندات المطلوبة (عربي)
+
+  // Status & Availability
+  status          ServiceStatus   @default(ACTIVE)
+  isActive        Boolean         @default(true)
+
+  // Metadata
+  orderCount      Int             @default(0) // عدد الطلبات
+
+  // Relations
+  requests        ServiceRequest[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("services")
+}
+
+// ============================================
+// SERVICE REQUESTS (طلبات الخدمات)
+// ============================================
+model ServiceRequest {
+  id              String          @id @default(uuid())
+  requestNumber   String          @unique // e.g., "REQ-2024-001"
+
+  // Customer Info
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+
+  // Service Info
+  serviceId       String
+  service         Service         @relation(fields: [serviceId], references: [id])
+
+  // Request Details (bilingual)
+  title           String          // English title
+  titleAr         String          // Arabic title (العنوان بالعربي)
+  description     String?         // English description
+  descriptionAr   String?         // Arabic description (الوصف بالعربي)
+  notes           String?         // Additional notes
+  notesAr         String?         // Additional notes (Arabic)
+
+  // Status & Priority
+  status          RequestStatus   @default(DRAFT)
+  priority        RequestPriority @default(MEDIUM)
+
+  // Assignment
+  assignedToId    String?
+  assignedTo      Employee?       @relation("AssignedEmployee", fields: [assignedToId], references: [id])
+  assignedAt      DateTime?
+
+  // Pricing
+  estimatedPrice  Decimal?        @db.Decimal(10, 2)
+  finalPrice      Decimal?        @db.Decimal(10, 2)
+  currency        String          @default("EGP")
+
+  // Timeline
+  requestedDate   DateTime        @default(now())
+  expectedDate    DateTime?       // Expected completion date
+  completedAt     DateTime?
+  deliveredAt     DateTime?
+
+  // Rejection/Cancellation
+  rejectionReason String?
+  rejectionReasonAr String?
+  cancellationReason String?
+  cancellationReasonAr String?
+
+  // Metadata
+  viewCount       Int             @default(0)
+  lastViewedAt    DateTime?
+
+  // Relations
+  invoice         Invoice?
+  documents       Document[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("service_requests")
+  @@index([customerId])
+  @@index([serviceId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([requestNumber])
+}
+
+// ============================================
+// INVOICES (الفواتير)
+// ============================================
+model Invoice {
+  id              String          @id @default(uuid())
+  invoiceNumber   String          @unique // e.g., "INV-2024-001"
+
+  // Request & Customer
+  requestId       String          @unique
+  request         ServiceRequest  @relation(fields: [requestId], references: [id])
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+
+  // Invoice Details
+  title           String          // English title
+  titleAr         String          // Arabic title
+  description     String?
+  descriptionAr   String?
+
+  // Amounts
+  subtotal        Decimal         @db.Decimal(10, 2) // المبلغ قبل الضريبة
+  taxRate         Decimal         @default(0)        @db.Decimal(5, 2) // نسبة الضريبة %
+  taxAmount       Decimal         @default(0)        @db.Decimal(10, 2) // مبلغ الضريبة
+  discount        Decimal         @default(0)        @db.Decimal(10, 2) // الخصم
+  total           Decimal         @db.Decimal(10, 2) // الإجمالي النهائي
+  currency        String          @default("EGP")
+
+  // Status & Dates
+  status          InvoiceStatus   @default(DRAFT)
+  issuedAt        DateTime?
+  sentAt          DateTime?
+  dueDate         DateTime?
+  paidAt          DateTime?
+
+  // Relations
+  payments        Payment[]
+
+  // Metadata
+  notes           String?
+  notesAr         String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("invoices")
+  @@index([customerId])
+  @@index([requestId])
+  @@index([status])
+  @@index([invoiceNumber])
+}
+
+// ============================================
+// PAYMENTS (المدفوعات)
+// ============================================
+model Payment {
+  id              String          @id @default(uuid())
+  paymentNumber   String          @unique // e.g., "PAY-2024-001"
+
+  // Invoice & Customer
+  invoiceId       String
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id])
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+
+  // Payment Details
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String          @default("EGP")
+
+  // Payment Info
+  method          PaymentMethod   @default(CASH)
+  status          PaymentStatus   @default(PENDING)
+
+  // Transaction Details
+  transactionId   String?         // معرف المعاملة من البنك/بوابة الدفع
+  referenceNumber String?         // رقم المرجع
+
+  // Dates
+  paidAt          DateTime?
+  failedAt        DateTime?
+  refundedAt      DateTime?
+
+  // Notes
+  notes           String?
+  notesAr         String?
+  failureReason   String?
+  failureReasonAr String?
+
+  // Metadata
+  receiptUrl      String?         // رابط الإيصال
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("payments")
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentNumber])
+}
+
+// ============================================
+// DOCUMENTS (المستندات)
+// ============================================
+enum DocumentType {
+  CONTRACT            // عقد
+  CERTIFICATE         // شهادة
+  REPORT              // تقرير
+  INVOICE_PDF         // فاتورة PDF
+  RECEIPT             // إيصال
+  TEST_RESULT         // نتيجة اختبار
+  TECHNICAL_DRAWING   // رسم هندسي
+  PHOTO               // صورة
+  VIDEO               // فيديو
+  OTHER               // أخرى
+}
+
+model Document {
+  id              String          @id @default(uuid())
+
+  // File Info
+  filename        String          // اسم الملف الأصلي
+  storedFilename  String          @unique // اسم الملف المخزن
+  filepath        String          // المسار الكامل للملف
+  mimetype        String          // نوع الملف (image/jpeg, application/pdf, etc.)
+  size            Int             // حجم الملف بالبايت
+
+  // Document Details
+  title           String?         // عنوان المستند (إنجليزي)
+  titleAr         String?         // عنوان المستند (عربي)
+  description     String?         // وصف المستند (إنجليزي)
+  descriptionAr   String?         // وصف المستند (عربي)
+  type            DocumentType    @default(OTHER)
+
+  // Relations
+  requestId       String?
+  request         ServiceRequest? @relation(fields: [requestId], references: [id])
+
+  // Upload Info
+  uploadedById    String          // من رفع الملف (customer or employee)
+  uploadedByType  String          // "customer" or "employee"
+
+  // Access Control
+  isPublic        Boolean         @default(false) // هل الملف عام أم خاص
+
+  // Metadata
+  downloadCount   Int             @default(0)
+  lastDownloadAt  DateTime?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("documents")
+  @@index([requestId])
+  @@index([uploadedById])
+  @@index([type])
+  @@index([storedFilename])
+}
+
+// ============================================
+// PASSWORD RESET TOKENS (رموز إعادة تعيين كلمة المرور)
+// ============================================
+model PasswordResetToken {
+  id          String   @id @default(uuid())
+  token       String   @unique
+  email       String
+  userType    String   // 'customer' | 'employee'
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("password_reset_tokens")
+  @@index([email])
+  @@index([token])
+}
+
+// ============================================
+// EMAIL VERIFICATION TOKENS (رموز تأكيد البريد الإلكتروني)
+// ============================================
+model EmailVerificationToken {
+  id          String   @id @default(uuid())
+  token       String   @unique
+  email       String
+  userType    String   // 'customer' | 'employee'
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("email_verification_tokens")
+  @@index([email])
+  @@index([token])
+}
+
+// ============================================
+// REFRESH TOKENS (رموز التحديث)
+// ============================================
+model RefreshToken {
+  id          String   @id @default(uuid())
+  token       String   @unique
+  userId      String
+  userType    String   // 'customer' | 'employee'
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// NOTIFICATIONS (الإشعارات)
+// ============================================
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  IN_APP
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum NotificationType {
+  REQUEST_CREATED
+  REQUEST_STATUS_CHANGED
+  REQUEST_ASSIGNED
+  INVOICE_CREATED
+  PAYMENT_RECEIVED
+  DOCUMENT_UPLOADED
+  ACCOUNT_VERIFIED
+  PASSWORD_RESET
+  WELCOME
+  REMINDER
+  SYSTEM
+}
+
+model Notification {
+  id          String              @id @default(uuid())
+
+  // Target user
+  userId      String
+  userType    String              // 'customer' | 'employee'
+
+  // Notification details
+  type        NotificationType
+  channel     NotificationChannel @default(IN_APP)
+
+  // Content (bilingual)
+  title       String
+  titleAr     String
+  message     String
+  messageAr   String
+
+  // Optional link/action
+  actionUrl   String?
+  actionData  Json?               // Additional data for the notification
+
+  // Status tracking
+  status      NotificationStatus  @default(PENDING)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedAt    DateTime?
+  failureReason String?
+
+  // Metadata
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("notifications")
+  @@index([userId, userType])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ============================================
+// SETTINGS / LOOKUP TABLES (جداول الإعدادات)
+// ============================================
+
+// أنواع الاختبارات
+model TestType {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // English name
+  nameAr          String          // Arabic name
+  description     String?         // English description
+  descriptionAr   String?         // Arabic description
+
+  // Categorization
+  code            String          @unique // e.g., "TT-001"
+  category        ServiceCategory // اختبارات معامل، فحص تربة، إلخ
+
+  // Pricing
+  basePrice       Decimal?        @db.Decimal(10, 2) // السعر الأساسي
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  // Relations
+  samples         SampleType[]    @relation("TestTypeSamples")
+  standards       Standard[]      @relation("TestTypeStandards")
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("test_types")
+  @@index([category])
+  @@index([isActive])
+}
+
+// أنواع العينات
+model SampleType {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // English name (e.g., "Concrete Cube")
+  nameAr          String          // Arabic name (e.g., "مكعب خرساني")
+  description     String?
+  descriptionAr   String?
+
+  // Categorization
+  code            String          @unique // e.g., "ST-001"
+
+  // Test Type Relation
+  testTypeId      String
+  testType        TestType        @relation("TestTypeSamples", fields: [testTypeId], references: [id])
+
+  // Sample Details
+  unit            String          @default("sample") // عينة، متر مكعب، كيلوجرام
+  unitAr          String          @default("عينة")
+  minQuantity     Int             @default(1)
+  maxQuantity     Int?
+
+  // Pricing (if different from test type base price)
+  pricePerUnit    Decimal?        @db.Decimal(10, 2)
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("sample_types")
+  @@index([testTypeId])
+  @@index([isActive])
+}
+
+// المواصفات القياسية (Egyptian, British, ASTM, etc.)
+model Standard {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // e.g., "ES 1658-2"
+  nameAr          String          // e.g., "م.ق.م 1658-2"
+  title           String          // Full title in English
+  titleAr         String          // Full title in Arabic
+  description     String?
+  descriptionAr   String?
+
+  // Categorization
+  code            String          @unique // e.g., "STD-001"
+  type            StandardType    @default(EGYPTIAN) // مصري، بريطاني، أمريكي، إلخ
+
+  // Related Test Types
+  testTypes       TestType[]      @relation("TestTypeStandards")
+
+  // Document Info
+  documentUrl     String?         // رابط المستند
+  version         String?         // إصدار المواصفة
+  publishedYear   Int?            // سنة الإصدار
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("standards")
+  @@index([type])
+  @@index([isActive])
+}
+
+enum StandardType {
+  EGYPTIAN        // مصري (ES)
+  BRITISH         // بريطاني (BS)
+  AMERICAN        // أمريكي (ASTM)
+  EUROPEAN        // أوروبي (EN)
+  INTERNATIONAL   // دولي (ISO)
+  OTHER           // أخرى
+}
+
+// قوائم الأسعار
+model PriceList {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // e.g., "Lab Tests 2024"
+  nameAr          String          // e.g., "أسعار الاختبارات 2024"
+  description     String?
+  descriptionAr   String?
+
+  // Categorization
+  code            String          @unique // e.g., "PL-2024-001"
+  category        ServiceCategory
+
+  // Validity
+  validFrom       DateTime        @default(now())
+  validTo         DateTime?
+
+  // Status
+  isActive        Boolean         @default(true)
+  isDefault       Boolean         @default(false) // القائمة الافتراضية
+
+  // Relations
+  items           PriceListItem[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("price_lists")
+  @@index([category])
+  @@index([isActive])
+  @@index([validFrom, validTo])
+}
+
+// عناصر قائمة الأسعار
+model PriceListItem {
+  id              String          @id @default(uuid())
+
+  // Price List Relation
+  priceListId     String
+  priceList       PriceList       @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+
+  // Item Details (bilingual)
+  name            String          // Item name in English
+  nameAr          String          // Item name in Arabic
+  description     String?
+  descriptionAr   String?
+
+  // Item Code
+  code            String          // e.g., "PLI-001"
+
+  // Pricing
+  price           Decimal         @db.Decimal(10, 2)
+  unit            String          @default("unit") // عينة، متر، كيلو
+  unitAr          String          @default("وحدة")
+  minQuantity     Int             @default(1)
+  maxQuantity     Int?
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([priceListId, code])
+  @@map("price_list_items")
+  @@index([priceListId])
+  @@index([isActive])
+}
+
+// أسعار المسافات للمحطات
+model DistanceRate {
+  id              String          @id @default(uuid())
+
+  // Range (km)
+  fromKm          Int             // من كيلومتر
+  toKm            Int             // إلى كيلومتر
+
+  // Pricing
+  rate            Decimal         @db.Decimal(10, 2) // السعر لكل رحلة
+  ratePerKm       Decimal?        @db.Decimal(10, 2) // أو السعر لكل كيلومتر
+
+  // Details (bilingual)
+  description     String?
+  descriptionAr   String?
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("distance_rates")
+  @@index([fromKm, toKm])
+  @@index([isActive])
+}
+
+// أنواع الخلاطات
+model MixerType {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // e.g., "Mobile Mixer 10m³"
+  nameAr          String          // e.g., "خلاطة متنقلة 10م³"
+  description     String?
+  descriptionAr   String?
+
+  // Categorization
+  code            String          @unique // e.g., "MT-001"
+
+  // Specifications
+  capacity        Decimal?        @db.Decimal(10, 2) // السعة بالمتر المكعب
+  capacityUnit    String          @default("m³")
+  capacityUnitAr  String          @default("م³")
+
+  // Pricing
+  pricePerBatch   Decimal?        @db.Decimal(10, 2) // سعر الدفعة الواحدة
+
+  // Status
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("mixer_types")
+  @@index([isActive])
+}
+
+// جدول البحث العام (للإعدادات القابلة للتوسيع)
+model LookupCategory {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // e.g., "Payment Terms", "Departments"
+  nameAr          String          // e.g., "شروط الدفع", "الأقسام"
+  description     String?
+  descriptionAr   String?
+
+  // Categorization
+  code            String          @unique // e.g., "LC-PAYMENT-TERMS"
+
+  // Status
+  isActive        Boolean         @default(true)
+  isSystem        Boolean         @default(false) // جدول نظام (لا يمكن حذفه)
+
+  // Relations
+  items           LookupItem[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("lookup_categories")
+  @@index([isActive])
+}
+
+// عناصر جدول البحث العام
+model LookupItem {
+  id              String          @id @default(uuid())
+
+  // Category Relation
+  categoryId      String
+  category        LookupCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // Basic Info (bilingual)
+  name            String          // Item name in English
+  nameAr          String          // Item name in Arabic
+  description     String?
+  descriptionAr   String?
+
+  // Item Code & Value
+  code            String          // e.g., "NET-30"
+  value           String?         // Optional value (e.g., "30" for NET-30)
+
+  // Optional Icon/Color for UI
+  icon            String?
+  color           String?
+
+  // Additional metadata
+  metadata        Json?           // أي بيانات إضافية
+
+  // Status
+  isActive        Boolean         @default(true)
+  isDefault       Boolean         @default(false)
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([categoryId, code])
+  @@map("lookup_items")
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+// ============================================
+// SYSTEM SETTINGS (إعدادات النظام)
+// ============================================
+model SystemSetting {
+  id              String          @id @default(uuid())
+
+  // Setting Key (unique identifier)
+  key             String          @unique // e.g., "tax_rate", "company_name"
+
+  // Setting Value
+  value           String          // The value as string (parsed based on type)
+  type            SettingType     @default(STRING) // Type hint for parsing
+
+  // Categorization
+  category        String          @default("general") // general, finance, notifications, etc.
+
+  // Details (bilingual)
+  label           String          // Label in English
+  labelAr         String          // Label in Arabic
+  description     String?
+  descriptionAr   String?
+
+  // Validation
+  isRequired      Boolean         @default(false)
+  validationRule  String?         // Optional regex or validation rule
+
+  // UI Hints
+  inputType       String          @default("text") // text, number, toggle, select, textarea
+  options         Json?           // For select inputs: [{value, label, labelAr}]
+
+  // Status
+  isSystem        Boolean         @default(false) // System settings (cannot be deleted)
+  isPublic        Boolean         @default(false) // Public settings (visible without auth)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("system_settings")
+  @@index([category])
+  @@index([key])
+}
+
+enum SettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  DATE
+}
+
+// ============================================
+// AUDIT LOGS (سجلات المراجعة)
+// ============================================
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+  EMAIL_VERIFY
+  STATUS_CHANGE
+  ASSIGN
+  UPLOAD
+  DOWNLOAD
+  EXPORT
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+
+  // Who performed the action
+  userId      String?
+  userType    String?     // 'customer' | 'employee' | 'system'
+  userEmail   String?
+
+  // What action was performed
+  action      AuditAction
+  entity      String      // e.g., 'ServiceRequest', 'Invoice', 'Customer'
+  entityId    String?
+
+  // Change details
+  oldData     Json?
+  newData     Json?
+  description String?
+  descriptionAr String?
+
+  // Request context
+  ipAddress   String?
+  userAgent   String?
+  requestPath String?
+  requestMethod String?
+
+  // Timestamp
+  createdAt   DateTime    @default(now())
+
+  @@map("audit_logs")
+  @@index([userId, userType])
+  @@index([entity, entityId])
+  @@index([action])
+  @@index([createdAt])
 }

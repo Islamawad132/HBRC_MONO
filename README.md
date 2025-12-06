@@ -13,6 +13,7 @@ A comprehensive CRM system for managing HBRC services including lab tests, consu
 - **Database**: PostgreSQL 16
 - **ORM**: Prisma 5
 - **Authentication**: JWT + Passport
+- **Email**: NodeMailer (Gmail SMTP)
 - **Documentation**: Swagger/OpenAPI
 - **Language**: TypeScript
 
@@ -41,7 +42,8 @@ cd HBRC_MONO
 npm install
 
 # Setup environment
-cp apps/api/.env.example apps/api/.env
+cp .env.example .env
+# Edit .env with your database and email credentials
 
 # Run database migrations
 npm run prisma:migrate --workspace=api
@@ -224,6 +226,26 @@ docker-compose --env-file .env.production up -d
 - ✅ CORS enabled
 - ✅ Input validation
 - ✅ SQL injection protection (Prisma)
+- ✅ Email with App Passwords (no plain passwords)
+
+---
+
+## 📧 Email Configuration
+
+The system supports automated email notifications. See [EMAIL_SETUP.md](./EMAIL_SETUP.md) for configuration guide.
+
+**Quick Setup:**
+1. Enable Gmail 2FA
+2. Generate App Password
+3. Update `.env` with email credentials
+4. Test with customer registration
+
+**Available Templates:**
+- Customer Welcome Email
+- Employee Welcome Email
+- Password Reset
+- Email Verification
+- Custom Notifications
 
 ---
 

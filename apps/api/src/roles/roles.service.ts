@@ -68,7 +68,10 @@ export class RolesService {
           },
         },
         _count: {
-          select: { users: true },
+          select: {
+            users: true,
+            employees: true,
+          },
         },
       },
     });
@@ -86,7 +89,10 @@ export class RolesService {
           },
         },
         _count: {
-          select: { users: true },
+          select: {
+            users: true,
+            employees: true,
+          },
         },
       },
     });
@@ -194,7 +200,10 @@ export class RolesService {
       where: { id },
       include: {
         _count: {
-          select: { users: true },
+          select: {
+            users: true,
+            employees: true,
+          },
         },
       },
     });
@@ -207,9 +216,10 @@ export class RolesService {
       throw new BadRequestException('Cannot delete the Admin role');
     }
 
-    if (role._count.users > 0) {
+    const totalUsers = role._count.users + role._count.employees;
+    if (totalUsers > 0) {
       throw new BadRequestException(
-        'Cannot delete role with assigned users. Reassign users first.',
+        'Cannot delete role with assigned users or employees. Reassign them first.',
       );
     }
 
@@ -221,6 +231,8 @@ export class RolesService {
   }
 
   private formatRoleResponse(role: any) {
+    const usersCount = (role._count?.users || 0) + (role._count?.employees || 0);
+
     return {
       id: role.id,
       name: role.name,
@@ -228,7 +240,9 @@ export class RolesService {
       description: role.description,
       isAdmin: role.isAdmin,
       permissions: role.permissions?.map((rp: any) => rp.permission) || [],
-      usersCount: role._count?.users,
+      usersCount,
+      employeesCount: role._count?.employees || 0,
+      legacyUsersCount: role._count?.users || 0,
       createdAt: role.createdAt,
       updatedAt: role.updatedAt,
     };

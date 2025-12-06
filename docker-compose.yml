@@ -45,6 +45,12 @@ services:
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-password}@postgres:5432/HBRC?schema=public
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # Email Configuration (Gmail SMTP)
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-HBRC <noreply@hbrc.com>}
     ports:
       - "3000:3000"
     volumes:

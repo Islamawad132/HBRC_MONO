@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         where: { id: payload.sub },
       });
 
-      if (!customer || !customer.isActive) {
+      if (!customer || customer.status !== 'ACTIVE') {
         throw new UnauthorizedException('Customer not found or inactive');
       }
 
@@ -48,7 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       });
 
-      if (!employee || !employee.isActive) {
+      if (!employee || employee.status !== 'ACTIVE') {
         throw new UnauthorizedException('Employee not found or inactive');
       }
 

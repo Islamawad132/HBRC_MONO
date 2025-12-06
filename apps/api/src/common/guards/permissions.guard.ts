@@ -32,9 +32,11 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    // Admin role has ALL permissions automatically
-    if (user.isAdmin) {
-      return true;
+    // Customers don't have roleId, they should not access protected endpoints
+    if (!user.roleId) {
+      throw new ForbiddenException(
+        'Access denied: This endpoint is for staff only',
+      );
     }
 
     // Get user's role with permissions
@@ -53,6 +55,12 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Role not found');
     }
 
+    // Admin role has ALL permissions automatically
+    if (role.isAdmin) {
+      return true;
+    }
+
+    // Check user permissions
     const userPermissions = role.permissions.map((rp) => rp.permission.name);
 
     const hasAllPermissions = requiredPermissions.every((permission) =>
@@ -60,7 +68,12 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (!hasAllPermissions) {
-      throw new ForbiddenException('Insufficient permissions');
+      const missing = requiredPermissions.filter(
+        (p) => !userPermissions.includes(p),
+      );
+      throw new ForbiddenException(
+        `Insufficient permissions. Missing: ${missing.join(', ')}`,
+      );
     }
 
     return true;

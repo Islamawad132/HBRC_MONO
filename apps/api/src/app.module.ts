@@ -11,6 +11,16 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { CustomersModule } from './customers/customers.module';
 import { EmployeesModule } from './employees/employees.module';
+import { MailModule } from './mail/mail.module';
+import { ServicesModule } from './services/services.module';
+import { RequestsModule } from './requests/requests.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { PaymentsModule } from './payments/payments.module';
+import { DocumentsModule } from './documents/documents.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AuditModule } from './audit/audit.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { SettingsModule } from './settings/settings.module';
 import { JwtAuthGuard } from './common/guards';
 
 @Module({
@@ -19,12 +29,22 @@ import { JwtAuthGuard } from './common/guards';
       isGlobal: true,
     }),
     PrismaModule,
+    MailModule,
     AuthModule,
     UsersModule,
     RolesModule,
     PermissionsModule,
     CustomersModule,
     EmployeesModule,
+    ServicesModule,
+    RequestsModule,
+    InvoicesModule,
+    PaymentsModule,
+    DocumentsModule,
+    NotificationsModule,
+    AuditModule,
+    DashboardModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

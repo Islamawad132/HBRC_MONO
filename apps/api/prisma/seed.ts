@@ -36,6 +36,32 @@ const initialPermissions = [
   { module: 'customers', action: 'update', description: 'Update customers' },
   { module: 'customers', action: 'delete', description: 'Delete customers' },
 
+  // Services permissions
+  { module: 'services', action: 'create', description: 'Create new services' },
+  { module: 'services', action: 'read', description: 'View services' },
+  { module: 'services', action: 'update', description: 'Update services' },
+  { module: 'services', action: 'delete', description: 'Delete services' },
+
+  // Service Requests permissions
+  { module: 'requests', action: 'create', description: 'Create new service requests' },
+  { module: 'requests', action: 'read', description: 'View service requests' },
+  { module: 'requests', action: 'update', description: 'Update service requests' },
+  { module: 'requests', action: 'update-status', description: 'Update request status' },
+  { module: 'requests', action: 'assign', description: 'Assign employees to requests' },
+  { module: 'requests', action: 'delete', description: 'Delete service requests' },
+
+  // Invoices permissions
+  { module: 'invoices', action: 'create', description: 'Create new invoices' },
+  { module: 'invoices', action: 'read', description: 'View invoices' },
+  { module: 'invoices', action: 'update', description: 'Update invoices' },
+  { module: 'invoices', action: 'delete', description: 'Delete invoices' },
+
+  // Payments permissions
+  { module: 'payments', action: 'create', description: 'Create new payments' },
+  { module: 'payments', action: 'read', description: 'View payments' },
+  { module: 'payments', action: 'update', description: 'Update payments' },
+  { module: 'payments', action: 'delete', description: 'Delete payments' },
+
   // Lab Tests permissions
   { module: 'lab-tests', action: 'create', description: 'Create lab test requests' },
   { module: 'lab-tests', action: 'read', description: 'View lab test requests' },
@@ -138,6 +164,31 @@ const initialPermissions = [
   { module: 'reports', action: 'read', description: 'View system reports' },
   { module: 'reports', action: 'generate', description: 'Generate custom reports' },
   { module: 'reports', action: 'export', description: 'Export reports' },
+
+  // Documents permissions
+  { module: 'documents', action: 'create', description: 'Upload new documents' },
+  { module: 'documents', action: 'read', description: 'View documents' },
+  { module: 'documents', action: 'update', description: 'Update document metadata' },
+  { module: 'documents', action: 'delete', description: 'Delete documents' },
+
+  // Notifications permissions
+  { module: 'notifications', action: 'create', description: 'Create notifications' },
+  { module: 'notifications', action: 'read', description: 'View notifications' },
+  { module: 'notifications', action: 'delete', description: 'Delete notifications' },
+
+  // Audit permissions
+  { module: 'audit', action: 'read', description: 'View audit logs' },
+  { module: 'audit', action: 'export', description: 'Export audit logs' },
+
+  // Dashboard permissions
+  { module: 'dashboard', action: 'read', description: 'View dashboard' },
+  { module: 'dashboard', action: 'read-all', description: 'View all statistics' },
+
+  // Settings permissions
+  { module: 'settings', action: 'create', description: 'Create settings/lookup items' },
+  { module: 'settings', action: 'read', description: 'View settings/lookup items' },
+  { module: 'settings', action: 'update', description: 'Update settings/lookup items' },
+  { module: 'settings', action: 'delete', description: 'Delete settings/lookup items' },
 ];
 
 async function main() {
@@ -186,8 +237,235 @@ async function main() {
   });
   console.log(`User role created/updated: ${userRole.id}`);
 
-  // Create all 29 employee roles with bilingual names
-  console.log('Creating employee roles...');
+  // Create all 29 employee roles with bilingual names and their permissions
+  console.log('Creating employee roles with permissions...');
+
+  // Define role permissions mapping (role name -> array of permission names)
+  const rolePermissionsMap: Record<string, string[]> = {
+    'System Administrator': [
+      'users:create', 'users:read', 'users:update', 'users:delete',
+      'roles:create', 'roles:read', 'roles:update', 'roles:delete',
+      'permissions:read',
+      'employees:create', 'employees:read', 'employees:update', 'employees:delete',
+      'settings:create', 'settings:read', 'settings:update', 'settings:delete',
+      'audit:read', 'audit:export',
+      'dashboard:read', 'dashboard:read-all',
+    ],
+    'Lab Manager': [
+      'lab-tests:create', 'lab-tests:read', 'lab-tests:update', 'lab-tests:delete',
+      'lab-tests:approve', 'lab-tests:receive-samples', 'lab-tests:conduct-tests', 'lab-tests:issue-certificate',
+      'employees:read',
+      'customers:read',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Sample Receiver': [
+      'lab-tests:read', 'lab-tests:receive-samples',
+      'customers:read',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Lab Analyst': [
+      'lab-tests:read', 'lab-tests:conduct-tests',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Chief Engineer': [
+      'consultancy:read', 'consultancy:update', 'consultancy:review-report', 'consultancy:approve-report',
+      'requests:read', 'requests:update-status',
+      'employees:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Project Engineer': [
+      'consultancy:read', 'consultancy:conduct-visit',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Committee Head': [
+      'stations:read', 'stations:update', 'stations:approve',
+      'requests:read', 'requests:update-status',
+      'employees:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Committee Member': [
+      'stations:read',
+      'requests:read',
+      'documents:read',
+      'dashboard:read',
+    ],
+    'Committee Secretary': [
+      'stations:read', 'stations:update',
+      'requests:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'dashboard:read',
+    ],
+    'Green Building Auditor': [
+      'green-building:read', 'green-building:audit',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Green Building Reviewer': [
+      'green-building:read', 'green-building:review',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read', 'documents:update',
+      'dashboard:read',
+    ],
+    'Green Building Certificate Approver': [
+      'green-building:read', 'green-building:approve-certificate', 'green-building:manage-experts',
+      'requests:read', 'requests:update-status',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Certified Expert': [
+      'green-building:read', 'green-building:audit',
+      'consultancy:read', 'consultancy:conduct-visit',
+      'requests:read',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Publishing Manager': [
+      'publishing:create', 'publishing:read', 'publishing:update', 'publishing:delete', 'publishing:manage-content',
+      'documents:create', 'documents:read', 'documents:update', 'documents:delete',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Events Manager': [
+      'events:create', 'events:read', 'events:update', 'events:delete',
+      'events:manage-registrations', 'events:approve',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Head of Marketing': [
+      'marketing:create', 'marketing:read', 'marketing:update', 'marketing:delete', 'marketing:manage-crm',
+      'customers:read',
+      'events:read',
+      'publishing:read',
+      'reports:read', 'reports:generate',
+      'dashboard:read', 'dashboard:read-all',
+    ],
+    'Growth Lead': [
+      'marketing:create', 'marketing:read', 'marketing:update',
+      'customers:read',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Content Lead': [
+      'marketing:read', 'marketing:update',
+      'publishing:create', 'publishing:read', 'publishing:update', 'publishing:manage-content',
+      'documents:create', 'documents:read', 'documents:update',
+      'dashboard:read',
+    ],
+    'CRM Lead': [
+      'marketing:read', 'marketing:manage-crm',
+      'customers:read', 'customers:update',
+      'customer-service:read', 'customer-service:manage-tickets',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'PR Lead': [
+      'marketing:read', 'marketing:update',
+      'events:read',
+      'publishing:read',
+      'dashboard:read',
+    ],
+    'Marketing Operations': [
+      'marketing:read', 'marketing:update',
+      'events:read', 'events:update',
+      'reports:read',
+      'dashboard:read',
+    ],
+    'Customer Service': [
+      'customer-service:read', 'customer-service:respond', 'customer-service:manage-tickets',
+      'customers:read',
+      'requests:read',
+      'invoices:read',
+      'payments:read',
+      'notifications:create', 'notifications:read',
+      'dashboard:read',
+    ],
+    'Accountant': [
+      'finance:read', 'finance:manage-payments', 'finance:generate-reports',
+      'invoices:create', 'invoices:read', 'invoices:update',
+      'payments:create', 'payments:read', 'payments:update',
+      'customers:read',
+      'requests:read',
+      'reports:read', 'reports:generate', 'reports:export',
+      'dashboard:read',
+    ],
+    'Trainer': [
+      'training:create', 'training:read', 'training:update', 'training:delete', 'training:conduct',
+      'events:read',
+      'documents:create', 'documents:read',
+      'dashboard:read',
+    ],
+    'Stations Manager': [
+      'stations:create', 'stations:read', 'stations:update', 'stations:delete', 'stations:approve',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'employees:read',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Consultancy Manager': [
+      'consultancy:create', 'consultancy:read', 'consultancy:update', 'consultancy:delete',
+      'consultancy:assign-engineer', 'consultancy:conduct-visit', 'consultancy:review-report', 'consultancy:approve-report',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'employees:read',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Fire Safety Manager': [
+      'fire-safety:create', 'fire-safety:read', 'fire-safety:update', 'fire-safety:delete', 'fire-safety:approve',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'employees:read',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Energy Efficiency Manager': [
+      'energy-efficiency:create', 'energy-efficiency:read', 'energy-efficiency:update', 'energy-efficiency:delete', 'energy-efficiency:approve',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'employees:read',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'Carbon Footprint Manager': [
+      'carbon-footprint:create', 'carbon-footprint:read', 'carbon-footprint:update', 'carbon-footprint:delete',
+      'carbon-footprint:calculate', 'carbon-footprint:approve',
+      'requests:read', 'requests:update-status', 'requests:assign',
+      'employees:read',
+      'customers:read',
+      'documents:create', 'documents:read', 'documents:update',
+      'reports:read', 'reports:generate',
+      'dashboard:read',
+    ],
+    'User': [
+      'dashboard:read',
+      'requests:read',
+      'documents:read',
+      'notifications:read',
+    ],
+  };
+
   const employeeRoles = [
     { name: 'System Administrator', nameAr: 'مدير النظام', description: 'Full access to system configuration' },
     { name: 'Lab Manager', nameAr: 'مدير المعمل', description: 'Manages lab operations and staff' },
@@ -220,8 +498,13 @@ async function main() {
     { name: 'Carbon Footprint Manager', nameAr: 'مدير البصمة الكربونية', description: 'Manages carbon calculations' },
   ];
 
+  // Get all permissions from database for lookup
+  const allPermissions = await prisma.permission.findMany();
+  const permissionMap = new Map(allPermissions.map(p => [p.name, p.id]));
+
   for (const role of employeeRoles) {
-    await prisma.role.upsert({
+    // Create or update the role
+    const createdRole = await prisma.role.upsert({
       where: { name: role.name },
       update: { nameAr: role.nameAr, description: role.description },
       create: {
@@ -231,15 +514,57 @@ async function main() {
         isAdmin: false,
       },
     });
+
+    // Get permissions for this role
+    const rolePermissions = rolePermissionsMap[role.name] || [];
+
+    // Delete existing role permissions to avoid duplicates
+    await prisma.rolePermission.deleteMany({
+      where: { roleId: createdRole.id },
+    });
+
+    // Create new role permissions
+    for (const permName of rolePermissions) {
+      const permissionId = permissionMap.get(permName);
+      if (permissionId) {
+        await prisma.rolePermission.create({
+          data: {
+            roleId: createdRole.id,
+            permissionId: permissionId,
+          },
+        });
+      } else {
+        console.warn(`Permission not found: ${permName}`);
+      }
+    }
   }
-  console.log(`Created/updated ${employeeRoles.length} employee roles`);
+
+  // Also assign permissions to User role
+  const defaultUserRole = await prisma.role.findUnique({ where: { name: 'User' } });
+  if (defaultUserRole) {
+    const userPermissions = rolePermissionsMap['User'] || [];
+    await prisma.rolePermission.deleteMany({ where: { roleId: defaultUserRole.id } });
+    for (const permName of userPermissions) {
+      const permissionId = permissionMap.get(permName);
+      if (permissionId) {
+        await prisma.rolePermission.create({
+          data: {
+            roleId: defaultUserRole.id,
+            permissionId: permissionId,
+          },
+        });
+      }
+    }
+  }
+
+  console.log(`Created/updated ${employeeRoles.length} employee roles with permissions`);
 
   // Create admin employee
   console.log('Creating admin employee...');
   const hashedPassword = await bcrypt.hash('admin123', 10);
   const adminEmployee = await prisma.employee.upsert({
     where: { email: 'admin@hbrc.com' },
-    update: { roleId: adminRole.id },
+    update: { roleId: adminRole.id, status: 'ACTIVE' },
     create: {
       email: 'admin@hbrc.com',
       password: hashedPassword,
@@ -250,10 +575,317 @@ async function main() {
       position: 'System Administrator',
       institute: 'HBRC',
       roleId: adminRole.id,
-      isActive: true,
+      status: 'ACTIVE',
+      language: 'ar',
+      notifications: true,
     },
   });
   console.log(`Admin employee created/updated: ${adminEmployee.email}`);
+
+  // Create System Settings
+  console.log('Creating system settings...');
+  const systemSettings = [
+    // File Upload Settings
+    {
+      key: 'max_file_size_mb',
+      value: '10',
+      type: 'NUMBER',
+      category: 'files',
+      label: 'Maximum File Size (MB)',
+      labelAr: 'الحد الأقصى لحجم الملف (ميجابايت)',
+      description: 'Maximum allowed file size for uploads in megabytes',
+      descriptionAr: 'الحد الأقصى المسموح به لحجم الملف المرفوع بالميجابايت',
+      isRequired: true,
+      inputType: 'number',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'allowed_file_types',
+      value: 'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif,zip,rar,txt',
+      type: 'STRING',
+      category: 'files',
+      label: 'Allowed File Types',
+      labelAr: 'أنواع الملفات المسموحة',
+      description: 'Comma-separated list of allowed file extensions',
+      descriptionAr: 'قائمة بامتدادات الملفات المسموحة مفصولة بفاصلة',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'max_files_per_request',
+      value: '10',
+      type: 'NUMBER',
+      category: 'files',
+      label: 'Maximum Files Per Request',
+      labelAr: 'الحد الأقصى للملفات لكل طلب',
+      description: 'Maximum number of files that can be uploaded per request',
+      descriptionAr: 'الحد الأقصى لعدد الملفات التي يمكن رفعها لكل طلب',
+      isRequired: false,
+      inputType: 'number',
+      isSystem: true,
+      isPublic: false,
+    },
+    // Company Settings
+    {
+      key: 'company_name',
+      value: 'مركز بحوث الإسكان والبناء',
+      type: 'STRING',
+      category: 'company',
+      label: 'Company Name',
+      labelAr: 'اسم الشركة',
+      description: 'The official name of the company',
+      descriptionAr: 'الاسم الرسمي للشركة',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'company_name_en',
+      value: 'Housing and Building Research Center',
+      type: 'STRING',
+      category: 'company',
+      label: 'Company Name (English)',
+      labelAr: 'اسم الشركة (إنجليزي)',
+      description: 'The official name of the company in English',
+      descriptionAr: 'الاسم الرسمي للشركة بالإنجليزية',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'company_email',
+      value: 'info@hbrc.gov.eg',
+      type: 'STRING',
+      category: 'company',
+      label: 'Company Email',
+      labelAr: 'البريد الإلكتروني للشركة',
+      description: 'The official email of the company',
+      descriptionAr: 'البريد الإلكتروني الرسمي للشركة',
+      isRequired: true,
+      inputType: 'email',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'company_phone',
+      value: '+20 2 3761 8600',
+      type: 'STRING',
+      category: 'company',
+      label: 'Company Phone',
+      labelAr: 'هاتف الشركة',
+      description: 'The official phone number of the company',
+      descriptionAr: 'رقم الهاتف الرسمي للشركة',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'company_address',
+      value: '87 Tahrir St., Dokki, Giza, Egypt',
+      type: 'STRING',
+      category: 'company',
+      label: 'Company Address',
+      labelAr: 'عنوان الشركة',
+      description: 'The official address of the company',
+      descriptionAr: 'العنوان الرسمي للشركة',
+      isRequired: true,
+      inputType: 'textarea',
+      isSystem: true,
+      isPublic: true,
+    },
+    // Finance Settings
+    {
+      key: 'tax_rate',
+      value: '14',
+      type: 'NUMBER',
+      category: 'finance',
+      label: 'Tax Rate (%)',
+      labelAr: 'نسبة الضريبة (%)',
+      description: 'Default VAT/Tax rate applied to invoices',
+      descriptionAr: 'نسبة ضريبة القيمة المضافة الافتراضية على الفواتير',
+      isRequired: true,
+      inputType: 'number',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'currency',
+      value: 'EGP',
+      type: 'STRING',
+      category: 'finance',
+      label: 'Currency',
+      labelAr: 'العملة',
+      description: 'Default currency for invoices and payments',
+      descriptionAr: 'العملة الافتراضية للفواتير والمدفوعات',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'invoice_prefix',
+      value: 'INV',
+      type: 'STRING',
+      category: 'finance',
+      label: 'Invoice Prefix',
+      labelAr: 'بادئة الفاتورة',
+      description: 'Prefix for invoice numbers',
+      descriptionAr: 'البادئة المستخدمة في أرقام الفواتير',
+      isRequired: true,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: false,
+    },
+    // Payment Settings
+    {
+      key: 'bank_name',
+      value: 'National Bank of Egypt',
+      type: 'STRING',
+      category: 'payment',
+      label: 'Bank Name',
+      labelAr: 'اسم البنك',
+      description: 'Bank name for bank transfer payments',
+      descriptionAr: 'اسم البنك للتحويلات البنكية',
+      isRequired: false,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'bank_account_name',
+      value: 'Housing and Building Research Center',
+      type: 'STRING',
+      category: 'payment',
+      label: 'Bank Account Name',
+      labelAr: 'اسم الحساب البنكي',
+      description: 'Account holder name for bank transfers',
+      descriptionAr: 'اسم صاحب الحساب للتحويلات البنكية',
+      isRequired: false,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'bank_account_number',
+      value: '1234567890123',
+      type: 'STRING',
+      category: 'payment',
+      label: 'Bank Account Number',
+      labelAr: 'رقم الحساب البنكي',
+      description: 'Bank account number for transfers',
+      descriptionAr: 'رقم الحساب البنكي للتحويلات',
+      isRequired: false,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'bank_iban',
+      value: 'EG380001000001234567890123',
+      type: 'STRING',
+      category: 'payment',
+      label: 'Bank IBAN',
+      labelAr: 'رقم IBAN',
+      description: 'IBAN number for international transfers',
+      descriptionAr: 'رقم IBAN للتحويلات الدولية',
+      isRequired: false,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    {
+      key: 'vodafone_cash_number',
+      value: '01012345678',
+      type: 'STRING',
+      category: 'payment',
+      label: 'Vodafone Cash Number',
+      labelAr: 'رقم فودافون كاش',
+      description: 'Vodafone Cash wallet number for mobile payments',
+      descriptionAr: 'رقم محفظة فودافون كاش للدفع بالموبايل',
+      isRequired: false,
+      inputType: 'text',
+      isSystem: true,
+      isPublic: true,
+    },
+    // System Settings
+    {
+      key: 'session_timeout_minutes',
+      value: '60',
+      type: 'NUMBER',
+      category: 'system',
+      label: 'Session Timeout (Minutes)',
+      labelAr: 'مهلة انتهاء الجلسة (دقائق)',
+      description: 'Time in minutes before an inactive session expires',
+      descriptionAr: 'الوقت بالدقائق قبل انتهاء صلاحية الجلسة غير النشطة',
+      isRequired: true,
+      inputType: 'number',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'password_min_length',
+      value: '6',
+      type: 'NUMBER',
+      category: 'system',
+      label: 'Minimum Password Length',
+      labelAr: 'الحد الأدنى لطول كلمة المرور',
+      description: 'Minimum number of characters required for passwords',
+      descriptionAr: 'الحد الأدنى لعدد الأحرف المطلوبة في كلمة المرور',
+      isRequired: true,
+      inputType: 'number',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'enable_email_verification',
+      value: 'true',
+      type: 'BOOLEAN',
+      category: 'system',
+      label: 'Enable Email Verification',
+      labelAr: 'تفعيل التحقق من البريد الإلكتروني',
+      description: 'Require email verification for new accounts',
+      descriptionAr: 'طلب التحقق من البريد الإلكتروني للحسابات الجديدة',
+      isRequired: false,
+      inputType: 'toggle',
+      isSystem: true,
+      isPublic: false,
+    },
+    {
+      key: 'maintenance_mode',
+      value: 'false',
+      type: 'BOOLEAN',
+      category: 'system',
+      label: 'Maintenance Mode',
+      labelAr: 'وضع الصيانة',
+      description: 'Enable maintenance mode to temporarily disable the system',
+      descriptionAr: 'تفعيل وضع الصيانة لتعطيل النظام مؤقتاً',
+      isRequired: false,
+      inputType: 'toggle',
+      isSystem: true,
+      isPublic: true,
+    },
+  ];
+
+  for (const setting of systemSettings) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {
+        value: setting.value,
+        label: setting.label,
+        labelAr: setting.labelAr,
+        description: setting.description,
+        descriptionAr: setting.descriptionAr,
+      },
+      create: setting as any,
+    });
+  }
+  console.log(`Created/updated ${systemSettings.length} system settings`);
 
   console.log('Seed completed successfully!');
   console.log('\n--- Admin Credentials (Employee) ---');
