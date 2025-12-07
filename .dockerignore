@@ -50,9 +50,9 @@ temp
 *.db
 *.sqlite
 
-# Prisma
-prisma/migrations/**/migration.sql
-apps/api/prisma/migrations/**/migration.sql
+# Prisma - keep migration.sql files for deployment
+# prisma/migrations/**/migration.sql
+# apps/api/prisma/migrations/**/migration.sql
 
 # Documentation
 README.md
