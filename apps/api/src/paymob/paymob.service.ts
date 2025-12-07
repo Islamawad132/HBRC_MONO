@@ -53,9 +53,11 @@ export class PaymobService {
       case PaymentMethod.CARD:
         return this.cardIntegrationId;
       case PaymentMethod.WALLET:
-        return this.walletIntegrationId;
+        // Fall back to card if wallet integration not configured
+        return this.walletIntegrationId || this.cardIntegrationId;
       case PaymentMethod.KIOSK:
-        return this.kioskIntegrationId;
+        // Fall back to card if kiosk integration not configured
+        return this.kioskIntegrationId || this.cardIntegrationId;
       default:
         return this.cardIntegrationId;
     }
@@ -148,7 +150,12 @@ export class PaymobService {
       this.logger.error(`Failed to create payment intention: ${error.message}`, error.stack);
       if (error.response?.data) {
         this.logger.error(`Paymob error response: ${JSON.stringify(error.response.data)}`);
-        throw new BadRequestException(error.response.data.message || 'Payment creation failed');
+        const errorDetail = error.response.data.detail || error.response.data.message || error.response.data.merchant_order_id;
+        throw new BadRequestException({
+          message: 'Payment creation failed',
+          messageAr: 'فشل في إنشاء عملية الدفع',
+          detail: errorDetail,
+        });
       }
       throw new InternalServerErrorException('Failed to create payment');
     }

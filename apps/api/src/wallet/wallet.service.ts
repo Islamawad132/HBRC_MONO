@@ -128,10 +128,8 @@ export class WalletService {
     const lastName = nameParts.slice(1).join(' ') || '';
 
     // Map deposit payment method to Paymob payment method
-    const paymobMethod = dto.paymentMethod === 'card' ? 'card' 
-      : dto.paymentMethod === 'wallet' ? 'wallet' 
-      : dto.paymentMethod === 'kiosk' ? 'kiosk' 
-      : 'card';
+    // Note: For now, only card is fully working. Wallet and Kiosk need Paymob activation.
+    const paymobMethod = 'card'; // Force card until wallet/kiosk integrations are activated
 
     const paymobResponse = await this.paymobService.createPaymentIntention({
       amount: dto.amount,
@@ -681,7 +679,10 @@ export class WalletService {
    * Generate unique transaction number
    */
   private async generateTransactionNumber(): Promise<string> {
-    const year = new Date().getFullYear();
+    const now = new Date();
+    const year = now.getFullYear();
+    const timestamp = now.getTime().toString().slice(-6);
+    
     const lastTransaction = await this.prisma.walletTransaction.findFirst({
       where: {
         transactionNumber: { startsWith: `WTX-${year}-` },
@@ -691,11 +692,13 @@ export class WalletService {
 
     let sequence = 1;
     if (lastTransaction) {
-      const lastSeq = parseInt(lastTransaction.transactionNumber.split('-')[2], 10);
+      const parts = lastTransaction.transactionNumber.split('-');
+      const lastSeq = parseInt(parts[2], 10);
       sequence = lastSeq + 1;
     }
 
-    return `WTX-${year}-${sequence.toString().padStart(6, '0')}`;
+    // Include timestamp to ensure uniqueness even if Paymob has old orders
+    return `WTX-${year}-${sequence.toString().padStart(6, '0')}-${timestamp}`;
   }
 
   /**
