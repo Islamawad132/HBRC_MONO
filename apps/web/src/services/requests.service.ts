@@ -41,7 +41,19 @@ class RequestsService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.base}?${queryString}` : ENDPOINTS.base;
 
-    return httpClient.get<PaginatedResponse<ServiceRequest>>(url);
+    const response = await httpClient.get<PaginatedResponse<ServiceRequest> | ServiceRequest[]>(url);
+    
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   async getById(id: string): Promise<ServiceRequest> {
@@ -89,7 +101,19 @@ class RequestsService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.myRequests}?${queryString}` : ENDPOINTS.myRequests;
 
-    return httpClient.get<PaginatedResponse<ServiceRequest>>(url);
+    const response = await httpClient.get<PaginatedResponse<ServiceRequest> | ServiceRequest[]>(url);
+    
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   // Employee: Get assigned requests
@@ -106,7 +130,19 @@ class RequestsService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.assigned}?${queryString}` : ENDPOINTS.assigned;
 
-    return httpClient.get<PaginatedResponse<ServiceRequest>>(url);
+    const response = await httpClient.get<PaginatedResponse<ServiceRequest> | ServiceRequest[]>(url);
+    
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   // Quick status updates

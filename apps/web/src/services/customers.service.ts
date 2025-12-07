@@ -29,7 +29,20 @@ class CustomersService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.base}?${queryString}` : ENDPOINTS.base;
 
-    return httpClient.get<PaginatedResponse<Customer>>(url);
+    const response = await httpClient.get<PaginatedResponse<Customer> | Customer[]>(url);
+    
+    // Handle both array and paginated response from API
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   async getById(id: string): Promise<Customer> {

@@ -34,7 +34,19 @@ class InvoicesService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.base}?${queryString}` : ENDPOINTS.base;
 
-    return httpClient.get<PaginatedResponse<Invoice>>(url);
+    const response = await httpClient.get<PaginatedResponse<Invoice> | Invoice[]>(url);
+    
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   async getById(id: string): Promise<Invoice> {
@@ -82,7 +94,19 @@ class InvoicesService {
     const queryString = params.toString();
     const url = queryString ? `${ENDPOINTS.myInvoices}?${queryString}` : ENDPOINTS.myInvoices;
 
-    return httpClient.get<PaginatedResponse<Invoice>>(url);
+    const response = await httpClient.get<PaginatedResponse<Invoice> | Invoice[]>(url);
+    
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.length,
+        totalPages: 1,
+      };
+    }
+    
+    return response;
   }
 
   // Download invoice as PDF
