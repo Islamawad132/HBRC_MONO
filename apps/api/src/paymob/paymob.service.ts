@@ -100,7 +100,7 @@ export class PaymobService {
           email: dto.email,
           first_name: dto.firstName,
           last_name: dto.lastName,
-          phone_number: dto.phone,
+          phone_number: (dto.phone || '').replace(/[^0-9+]/g, '').slice(0, 15) || 'NA',
           state: 'NA',
         },
         customer: {

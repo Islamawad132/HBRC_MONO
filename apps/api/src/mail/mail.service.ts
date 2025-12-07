@@ -174,7 +174,7 @@ export class MailService {
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="http://localhost:3000" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-size: 16px; font-weight: bold;">
+        <a href="${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-size: 16px; font-weight: bold;">
           ابدأ الآن
         </a>
       </div>
@@ -243,7 +243,7 @@ export class MailService {
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="http://localhost:3000" style="display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-size: 16px; font-weight: bold;">
+        <a href="${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}" style="display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-size: 16px; font-weight: bold;">
           تسجيل الدخول
         </a>
       </div>
@@ -265,7 +265,8 @@ export class MailService {
   }
 
   private getPasswordResetTemplate(name: string, resetToken: string): string {
-    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
     return `
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -337,7 +338,8 @@ export class MailService {
     name: string,
     verificationToken: string,
   ): string {
-    const verifyUrl = `http://localhost:3000/verify-email?token=${verificationToken}`;
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
     return `
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
