@@ -62,13 +62,13 @@ class DashboardService {
     try {
       const summary = await this.getSummary();
       return {
-        totalCustomers: summary.totalCustomers || 0,
-        totalServices: summary.totalServices || 0,
-        totalRequests: summary.totalRequests || 0,
-        totalRevenue: summary.totalRevenue || 0,
-        pendingRequests: summary.pendingRequests || 0,
-        completedRequests: summary.completedRequests || 0,
-        monthlyGrowth: summary.monthlyGrowth || 0,
+        totalCustomers: summary.customers?.total || 0,
+        totalServices: summary.services?.total || 0,
+        totalRequests: summary.requests?.total || 0,
+        totalRevenue: summary.revenue?.total || 0,
+        pendingRequests: summary.requests?.pending || 0,
+        completedRequests: summary.requests?.completed || 0,
+        monthlyGrowth: 0, // Calculate from revenue if needed
       };
     } catch {
       // Return default values if API fails

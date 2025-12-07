@@ -1,4 +1,21 @@
 {
+  "comingSoon": {
+    "title": "Coming Soon",
+    "description": "We're working hard to bring you this new feature. Stay tuned for updates!",
+    "goBack": "Go Back",
+    "notifyMe": "Notify Me",
+    "expectedLaunch": "Expected Launch",
+    "progress": "Development Progress",
+    "almostThere": "We're almost there! Thanks for your patience",
+    "features": {
+      "fast": "Fast & Efficient",
+      "fastDesc": "Optimized performance",
+      "secure": "Secure & Reliable",
+      "secureDesc": "Advanced data protection",
+      "modern": "Modern Design",
+      "modernDesc": "User-friendly interface"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

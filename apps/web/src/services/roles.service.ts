@@ -4,7 +4,6 @@ import type {
   Permission,
   CreateRoleRequest,
   UpdateRoleRequest,
-  PaginatedResponse,
   DeleteResponse,
 } from '../types/interfaces';
 

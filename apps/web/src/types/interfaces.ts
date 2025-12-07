@@ -20,6 +20,7 @@ import type {
   AuditAction,
   StandardType,
   SettingType,
+  UserType,
 } from './enums';
 
 // ============================================
@@ -781,7 +782,7 @@ export interface PaymentFilters extends PaginationParams {
 // UTILITY TYPES
 // ============================================
 
-export type UserType = 'customer' | 'employee';
+// UserType is defined in enums.ts
 
 export interface CurrentUser {
   id: string;

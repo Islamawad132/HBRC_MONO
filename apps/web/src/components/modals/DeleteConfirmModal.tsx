@@ -8,7 +8,7 @@ interface DeleteConfirmModalProps {
   onClose: () => void;
   onConfirm: () => Promise<void>;
   title?: string;
-  message?: string;
+  message?: string | React.ReactNode;
   itemName?: string;
   warning?: string;
 }
