@@ -5,6 +5,7 @@ import type {
   CreateRoleRequest,
   UpdateRoleRequest,
   DeleteResponse,
+  PaginatedResponse,
 } from '../types/interfaces';
 
 const ENDPOINTS = {
@@ -21,6 +22,22 @@ class RolesService {
 
   async getAllRoles(): Promise<Role[]> {
     return httpClient.get<Role[]>(ENDPOINTS.roles);
+  }
+
+  async getAll(): Promise<Role[]> {
+    return this.getAllRoles();
+  }
+
+  async getPermissions(): Promise<Permission[]> {
+    return this.getAllPermissions();
+  }
+
+  async create(data: CreateRoleRequest): Promise<Role> {
+    return this.createRole(data);
+  }
+
+  async update(id: string, data: UpdateRoleRequest): Promise<Role> {
+    return this.updateRole(id, data);
   }
 
   async getRoleById(id: string): Promise<Role> {
