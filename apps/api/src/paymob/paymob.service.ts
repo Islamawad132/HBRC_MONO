@@ -178,7 +178,7 @@ export class PaymobService {
       'is_refunded',
       'is_standalone_payment',
       'is_voided',
-      'order',
+      'order.id',
       'owner',
       'pending',
       'source_data.pan',
@@ -197,6 +197,8 @@ export class PaymobService {
       }
       concatenatedString += value?.toString() || '';
     }
+    
+    this.logger.debug(`HMAC concat string: ${concatenatedString}`);
 
     // Calculate HMAC-SHA512
     const calculatedHmac = crypto
