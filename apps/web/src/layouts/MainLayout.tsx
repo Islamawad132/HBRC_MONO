@@ -28,6 +28,9 @@ import {
   Monitor,
   Briefcase,
   SlidersHorizontal,
+  BookOpen,
+  ShoppingBag,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { socketService } from '../services/socket.service';
@@ -38,6 +41,7 @@ const employeeNavigation = [
   { nameKey: 'sidebar.customers', href: '/customers', icon: Users },
   { nameKey: 'sidebar.employees', href: '/employees', icon: UserCog },
   { nameKey: 'sidebar.services', href: '/services', icon: FileText },
+  { nameKey: 'sidebar.publications', href: '/publications', icon: BookOpen },
   { nameKey: 'sidebar.requests', href: '/requests', icon: ClipboardList },
   { nameKey: 'sidebar.invoices', href: '/invoices', icon: Receipt },
   { nameKey: 'sidebar.payments', href: '/payments', icon: CreditCard },
@@ -52,6 +56,9 @@ const adminNavigation = [
 
 const customerNavigation = [
   { nameKey: 'sidebar.home', href: '/dashboard', icon: Home },
+  { nameKey: 'sidebar.wallet', href: '/wallet', icon: Wallet },
+  { nameKey: 'sidebar.publicationsCatalog', href: '/publications-catalog', icon: BookOpen },
+  { nameKey: 'sidebar.myPublications', href: '/my-publications', icon: ShoppingBag },
   { nameKey: 'sidebar.myRequests', href: '/my-requests', icon: ClipboardList },
   { nameKey: 'sidebar.myInvoices', href: '/my-invoices', icon: Receipt },
   { nameKey: 'sidebar.myDocuments', href: '/my-documents', icon: FolderOpen },

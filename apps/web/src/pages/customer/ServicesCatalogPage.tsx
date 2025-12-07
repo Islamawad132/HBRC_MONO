@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../context/SettingsContext';
 import { servicesService } from '../../services/services.service';
 import type { Service } from '../../types/interfaces';
-import { ServiceCategory, getLabel, ServiceCategoryLabels, PricingType } from '../../types/enums';
+import { ServiceCategory, getLabel, ServiceCategoryLabels } from '../../types/enums';
 import { toast } from 'sonner';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   Building2,
   Search,
@@ -457,50 +458,54 @@ function ServiceDetailsModal({
   isRTL,
   onClose,
   onRequest,
-  formatCurrency,
   getPriceDisplay,
 }: ServiceDetailsModalProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="glass-card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6">
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${categoryColors[service.category] || 'from-gray-400 to-gray-500'}`}
-            >
-              {categoryIcons[service.category]}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                {language === 'ar' ? service.nameAr : service.name}
-              </h2>
-              <p className="text-sm text-white/60">{service.code}</p>
-            </div>
-          </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={language === 'ar' ? service.nameAr : service.name}
+      icon={Building2}
+      size="lg"
+      footer={
+        <ModalFooter>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
+            className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-medium text-white transition-colors hover:bg-white/10"
           >
-            <X className="h-5 w-5" />
+            {t('common.close')}
           </button>
-        </div>
-
-        {/* Category Badge */}
-        <div className="mb-4">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white/80">
-            {categoryIcons[service.category] && (
-              <span className="h-4 w-4">{categoryIcons[service.category]}</span>
-            )}
-            {getLabel(ServiceCategoryLabels, service.category, language)}
-          </span>
+          <button
+            onClick={() => onRequest(service)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2.5 font-medium text-white transition-colors hover:opacity-90"
+          >
+            <FileText className="h-5 w-5" />
+            <span>{isRTL ? 'اطلب هذه الخدمة' : 'Request This Service'}</span>
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className="space-y-6">
+        {/* Service Header */}
+        <div className="flex items-center gap-4">
+          <div
+            className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${categoryColors[service.category] || 'from-gray-400 to-gray-500'}`}
+          >
+            {categoryIcons[service.category]}
+          </div>
+          <div>
+            <p className="text-sm text-white/60">{service.code}</p>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white/80">
+              {getLabel(ServiceCategoryLabels, service.category, language)}
+            </span>
+          </div>
         </div>
 
         {/* Description */}
         {(service.description || service.descriptionAr) && (
-          <div className="mb-6">
+          <div>
             <h3 className="mb-2 text-sm font-medium text-white/60">
               {isRTL ? 'الوصف' : 'Description'}
             </h3>
@@ -511,7 +516,7 @@ function ServiceDetailsModal({
         )}
 
         {/* Pricing Info */}
-        <div className="mb-6 rounded-lg bg-white/5 p-4">
+        <div className="rounded-lg bg-white/5 p-4">
           <h3 className="mb-3 text-sm font-medium text-white/60">
             {isRTL ? 'معلومات التسعير' : 'Pricing Information'}
           </h3>
@@ -552,7 +557,7 @@ function ServiceDetailsModal({
 
         {/* Requirements */}
         {(service.requirements || service.requirementsAr) && (
-          <div className="mb-6">
+          <div>
             <h3 className="mb-2 text-sm font-medium text-white/60">
               {isRTL ? 'المتطلبات' : 'Requirements'}
             </h3>
@@ -565,7 +570,7 @@ function ServiceDetailsModal({
         )}
 
         {/* Features */}
-        <div className="mb-6">
+        <div>
           <h3 className="mb-2 text-sm font-medium text-white/60">
             {isRTL ? 'ما يشمله' : 'What\'s Included'}
           </h3>
@@ -582,24 +587,7 @@ function ServiceDetailsModal({
             ))}
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="glass-button flex-1 px-4 py-3 text-white/70 hover:text-white"
-          >
-            {t('common.close')}
-          </button>
-          <button
-            onClick={() => onRequest(service)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-3 font-semibold text-white transition-all hover:scale-105"
-          >
-            <FileText className="h-5 w-5" />
-            <span>{isRTL ? 'اطلب هذه الخدمة' : 'Request This Service'}</span>
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -5,16 +5,15 @@ import { invoicesService } from '../../services/invoices.service';
 import type { Invoice } from '../../types/interfaces';
 import { InvoiceStatus, getLabel } from '../../types/enums';
 import { toast } from 'sonner';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   Receipt,
-  Search,
   Filter,
   Eye,
   Download,
   CreditCard,
   Clock,
   CheckCircle,
-  XCircle,
   ChevronLeft,
   ChevronRight,
   X,
@@ -336,98 +335,93 @@ export function MyInvoicesPage() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('myInvoices.invoiceDetails')}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedInvoice(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
+      <Modal
+        isOpen={showViewModal && !!selectedInvoice}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedInvoice(null);
+        }}
+        title={t('myInvoices.invoiceDetails')}
+        icon={Receipt}
+        size="lg"
+        footer={
+          <ModalFooter>
+            <button
+              onClick={() => selectedInvoice && handleDownload(selectedInvoice)}
+              className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-medium text-white transition-colors hover:bg-white/10"
+            >
+              <Download className="mr-2 inline h-4 w-4" />
+              {t('myInvoices.download')}
+            </button>
+            {selectedInvoice && selectedInvoice.status !== 'PAID' && selectedInvoice.status !== 'CANCELLED' && (
+              <button className="flex-1 rounded-xl bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2.5 font-medium text-white transition-colors hover:opacity-90">
+                <CreditCard className="mr-2 inline h-4 w-4" />
+                {t('myInvoices.payNow')}
               </button>
+            )}
+          </ModalFooter>
+        }
+      >
+        {selectedInvoice && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-[#a0592b]/20 to-[#f26522]/20">
+                <Receipt className="h-8 w-8 text-[#f26522]" />
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">#{selectedInvoice.invoiceNumber}</p>
+                <span
+                  className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedInvoice.status]}`}
+                >
+                  {getLabel('InvoiceStatus', selectedInvoice.status, language)}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-[#a0592b]/20 to-[#f26522]/20">
-                  <Receipt className="h-8 w-8 text-[#f26522]" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-white">#{selectedInvoice.invoiceNumber}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedInvoice.status]}`}
-                  >
-                    {getLabel('InvoiceStatus', selectedInvoice.status, language)}
-                  </span>
-                </div>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div className="flex justify-between">
+                <span className="text-white/60">{t('myInvoices.subtotal')}</span>
+                <span className="text-white">{formatCurrency(selectedInvoice.subtotal)}</span>
               </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              {selectedInvoice.tax > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-white/60">{t('myInvoices.subtotal')}</span>
-                  <span className="text-white">{formatCurrency(selectedInvoice.subtotal)}</span>
+                  <span className="text-white/60">{t('myInvoices.tax')}</span>
+                  <span className="text-white">{formatCurrency(selectedInvoice.tax)}</span>
                 </div>
-                {selectedInvoice.tax > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-white/60">{t('myInvoices.tax')}</span>
-                    <span className="text-white">{formatCurrency(selectedInvoice.tax)}</span>
-                  </div>
-                )}
-                {selectedInvoice.discount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-white/60">{t('myInvoices.discount')}</span>
-                    <span className="text-emerald-400">-{formatCurrency(selectedInvoice.discount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t border-white/10 pt-4">
-                  <span className="font-medium text-white">{t('myInvoices.total')}</span>
-                  <span className="text-xl font-bold text-white">{formatCurrency(selectedInvoice.total)}</span>
+              )}
+              {selectedInvoice.discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-white/60">{t('myInvoices.discount')}</span>
+                  <span className="text-emerald-400">-{formatCurrency(selectedInvoice.discount)}</span>
                 </div>
-              </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
-                <div>
-                  <p className="text-xs text-white/40">{t('myInvoices.issuedAt')}</p>
-                  <p className="text-white">{formatDate(selectedInvoice.createdAt)}</p>
-                </div>
-                {selectedInvoice.dueDate && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myInvoices.dueDate')}</p>
-                    <p className="text-white">{formatDate(selectedInvoice.dueDate)}</p>
-                  </div>
-                )}
-                {selectedInvoice.request && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myInvoices.relatedRequest')}</p>
-                    <p className="text-white">#{selectedInvoice.request.requestNumber}</p>
-                  </div>
-                )}
+              )}
+              <div className="flex justify-between border-t border-white/10 pt-4">
+                <span className="font-medium text-white">{t('myInvoices.total')}</span>
+                <span className="text-xl font-bold text-white">{formatCurrency(selectedInvoice.total)}</span>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => handleDownload(selectedInvoice)}
-                className="glass-button flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white"
-              >
-                <Download className="h-4 w-4" />
-                {t('myInvoices.download')}
-              </button>
-              {selectedInvoice.status !== 'PAID' && selectedInvoice.status !== 'CANCELLED' && (
-                <button className="glass-button flex items-center gap-2 bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2 text-white">
-                  <CreditCard className="h-4 w-4" />
-                  {t('myInvoices.payNow')}
-                </button>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div>
+                <p className="text-xs text-white/40">{t('myInvoices.issuedAt')}</p>
+                <p className="text-white">{formatDate(selectedInvoice.createdAt)}</p>
+              </div>
+              {selectedInvoice.dueDate && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myInvoices.dueDate')}</p>
+                  <p className="text-white">{formatDate(selectedInvoice.dueDate)}</p>
+                </div>
+              )}
+              {selectedInvoice.request && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myInvoices.relatedRequest')}</p>
+                  <p className="text-white">#{selectedInvoice.request.requestNumber}</p>
+                </div>
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { rolesService } from '../../services/roles.service';
 import type { Employee, Role, EmployeeFilters } from '../../types/interfaces';
 import { AccountStatus, getLabel } from '../../types/enums';
 import { toast } from 'sonner';
-import { EmployeeModal } from '../../components/modals';
+import { EmployeeModal, DeleteConfirmModal } from '../../components/modals';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   Users,
   Search,
@@ -23,9 +24,9 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  X,
   Clock,
   Briefcase,
+  X,
 } from 'lucide-react';
 
 // Status color mapping
@@ -566,159 +567,133 @@ export function EmployeesPage() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-lg p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('employees.employeeDetails')}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedEmployee(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        isOpen={showViewModal && !!selectedEmployee}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedEmployee(null);
+        }}
+        title={t('employees.employeeDetails')}
+        icon={Users}
+        size="lg"
+        footer={
+          <ModalFooter
+            onCancel={() => {
+              setShowViewModal(false);
+              setSelectedEmployee(null);
+            }}
+            cancelText={t('common.close')}
+            onConfirm={() => {
+              setShowViewModal(false);
+              setShowEmployeeModal(true);
+            }}
+            confirmText={t('common.edit')}
+          />
+        }
+      >
+        {selectedEmployee && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a0592b] to-[#f26522]">
+                <span className="text-2xl font-bold text-white">
+                  {selectedEmployee.user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">{selectedEmployee.user.name}</p>
+                <p className="text-sm text-white/60">{selectedEmployee.employeeId}</p>
+                <span
+                  className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedEmployee.status]}`}
+                >
+                  {getLabel('AccountStatus', selectedEmployee.status, language)}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a0592b] to-[#f26522]">
-                  <span className="text-2xl font-bold text-white">
-                    {selectedEmployee.user.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-white/40" />
                 <div>
-                  <p className="text-lg font-medium text-white">{selectedEmployee.user.name}</p>
-                  <p className="text-sm text-white/60">{selectedEmployee.employeeId}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedEmployee.status]}`}
-                  >
-                    {getLabel('AccountStatus', selectedEmployee.status, language)}
-                  </span>
+                  <p className="text-xs text-white/40">{t('auth.email')}</p>
+                  <p className="text-white">{selectedEmployee.user.email}</p>
                 </div>
               </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              {selectedEmployee.user.phone && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-white/40" />
+                  <Phone className="h-5 w-5 text-white/40" />
                   <div>
-                    <p className="text-xs text-white/40">{t('auth.email')}</p>
-                    <p className="text-white">{selectedEmployee.user.email}</p>
+                    <p className="text-xs text-white/40">{t('auth.phone')}</p>
+                    <p className="text-white">{selectedEmployee.user.phone}</p>
                   </div>
                 </div>
-                {selectedEmployee.user.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('auth.phone')}</p>
-                      <p className="text-white">{selectedEmployee.user.phone}</p>
-                    </div>
+              )}
+              {selectedEmployee.department && (
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-white/40" />
+                  <div>
+                    <p className="text-xs text-white/40">{t('employees.department')}</p>
+                    <p className="text-white">{selectedEmployee.department}</p>
                   </div>
-                )}
-                {selectedEmployee.department && (
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('employees.department')}</p>
-                      <p className="text-white">{selectedEmployee.department}</p>
-                    </div>
+                </div>
+              )}
+              {selectedEmployee.position && (
+                <div className="flex items-center gap-3">
+                  <Briefcase className="h-5 w-5 text-white/40" />
+                  <div>
+                    <p className="text-xs text-white/40">{t('employees.position')}</p>
+                    <p className="text-white">{selectedEmployee.position}</p>
                   </div>
-                )}
-                {selectedEmployee.position && (
-                  <div className="flex items-center gap-3">
-                    <Briefcase className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('employees.position')}</p>
-                      <p className="text-white">{selectedEmployee.position}</p>
-                    </div>
+                </div>
+              )}
+              {selectedEmployee.role && (
+                <div className="flex items-center gap-3">
+                  <Shield className={`h-5 w-5 ${selectedEmployee.role.isAdmin ? 'text-amber-400' : 'text-white/40'}`} />
+                  <div>
+                    <p className="text-xs text-white/40">{t('employees.role')}</p>
+                    <p className="text-white">
+                      {selectedEmployee.role.name}
+                      {selectedEmployee.role.isAdmin && (
+                        <span className="ml-2 text-xs text-amber-400">(Admin)</span>
+                      )}
+                    </p>
                   </div>
-                )}
-                {selectedEmployee.role && (
-                  <div className="flex items-center gap-3">
-                    <Shield className={`h-5 w-5 ${selectedEmployee.role.isAdmin ? 'text-amber-400' : 'text-white/40'}`} />
-                    <div>
-                      <p className="text-xs text-white/40">{t('employees.role')}</p>
-                      <p className="text-white">
-                        {selectedEmployee.role.name}
-                        {selectedEmployee.role.isAdmin && (
-                          <span className="ml-2 text-xs text-amber-400">(Admin)</span>
-                        )}
-                      </p>
-                    </div>
+                </div>
+              )}
+              {selectedEmployee.institute && (
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-white/40" />
+                  <div>
+                    <p className="text-xs text-white/40">{t('employees.institute')}</p>
+                    <p className="text-white">{selectedEmployee.institute}</p>
                   </div>
-                )}
-                {selectedEmployee.institute && (
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('employees.institute')}</p>
-                      <p className="text-white">{selectedEmployee.institute}</p>
-                    </div>
+                </div>
+              )}
+              {selectedEmployee.user.lastLoginAt && (
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-white/40" />
+                  <div>
+                    <p className="text-xs text-white/40">{t('employees.lastLogin')}</p>
+                    <p className="text-white">{formatDate(selectedEmployee.user.lastLoginAt)}</p>
                   </div>
-                )}
-                {selectedEmployee.user.lastLoginAt && (
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('employees.lastLogin')}</p>
-                      <p className="text-white">{formatDate(selectedEmployee.user.lastLoginAt)}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedEmployee(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.close')}
-              </button>
-              <button className="glass-button bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2 text-white">
-                {t('common.edit')}
-              </button>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-              <Trash2 className="h-6 w-6 text-red-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">{t('employees.deleteConfirmTitle')}</h2>
-            <p className="mt-2 text-white/60">{t('employees.deleteConfirmMessage')}</p>
-            <p className="mt-2 font-medium text-white">{selectedEmployee.user.name}</p>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedEmployee(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="glass-button bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedEmployee(null);
+        }}
+        onConfirm={handleDelete}
+        title={t('employees.deleteConfirmTitle')}
+        message={t('employees.deleteConfirmMessage')}
+        itemName={selectedEmployee?.user.name}
+      />
 
       {/* Employee Modal */}
       <EmployeeModal

@@ -68,10 +68,11 @@
     --bg-input: rgba(255, 255, 255, 0.95);
     --bg-hover: rgba(160, 89, 43, 0.12);
 
+    /* Dark text colors for light theme - HIGH CONTRAST */
     --text-primary: #1a1410;
-    --text-secondary: #2d2620;
-    --text-muted: #5a5048;
-    --text-placeholder: #8a8078;
+    --text-secondary: #3d352e;
+    --text-muted: #5c524a;
+    --text-placeholder: #7a7068;
 
     --border-primary: rgba(160, 89, 43, 0.25);
     --border-secondary: rgba(160, 89, 43, 0.15);
@@ -86,6 +87,115 @@
 
     /* Orb colors */
     --orb-opacity: 0.12;
+  }
+
+  /* ============================================
+     LIGHT THEME TEXT COLOR FIXES
+     ============================================ */
+
+  /* Force dark text on light backgrounds */
+  .light .text-white:not([class*="bg-"]):not([class*="from-"]) {
+    color: var(--text-primary) !important;
+  }
+
+  /* Specific light mode text overrides */
+  .light {
+    /* Override gray text colors to be darker */
+    --tw-text-opacity: 1;
+  }
+
+  .light .text-gray-100,
+  .light .text-gray-200,
+  .light .text-gray-300 {
+    color: var(--text-primary) !important;
+  }
+
+  .light .text-gray-400,
+  .light .text-gray-500 {
+    color: var(--text-secondary) !important;
+  }
+
+  .light .text-gray-600,
+  .light .text-gray-700 {
+    color: var(--text-muted) !important;
+  }
+
+  /* Keep white text on colored/gradient backgrounds */
+  .light .bg-gradient-to-br,
+  .light .bg-gradient-to-r,
+  .light .bg-gradient-to-l,
+  .light .bg-gradient-to-t,
+  .light .bg-gradient-to-b,
+  .light [class*="from-[#"],
+  .light [class*="bg-[#a0592b]"],
+  .light [class*="bg-[#f26522]"],
+  .light [class*="bg-[#d4a84b]"],
+  .light .bg-red-500,
+  .light .bg-red-600,
+  .light .bg-green-500,
+  .light .bg-green-600,
+  .light .bg-blue-500,
+  .light .bg-blue-600,
+  .light .bg-yellow-500,
+  .light .bg-orange-500,
+  .light .bg-orange-600,
+  .light .glass-button,
+  .light .btn-premium {
+    color: #ffffff;
+  }
+
+  /* Ensure icons and text inside gradient containers stay white */
+  .light .bg-gradient-to-br *,
+  .light .bg-gradient-to-r *,
+  .light [class*="from-[#"] *,
+  .light [class*="bg-[#a0592b]"] *,
+  .light [class*="bg-[#f26522]"] * {
+    color: inherit;
+  }
+
+  /* Badge and status colors in light mode */
+  .light .bg-green-500\/10,
+  .light .bg-green-100 {
+    color: #166534 !important;
+  }
+
+  .light .bg-red-500\/10,
+  .light .bg-red-100 {
+    color: #991b1b !important;
+  }
+
+  .light .bg-yellow-500\/10,
+  .light .bg-yellow-100 {
+    color: #92400e !important;
+  }
+
+  .light .bg-blue-500\/10,
+  .light .bg-blue-100 {
+    color: #1e40af !important;
+  }
+
+  /* Table text in light mode */
+  .light table th {
+    color: var(--text-primary) !important;
+  }
+
+  .light table td {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Form labels in light mode */
+  .light label {
+    color: var(--text-primary) !important;
+  }
+
+  /* Headings in light mode */
+  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+    color: var(--text-primary);
+  }
+
+  /* Paragraph and span text */
+  .light p:not([class*="text-"]) {
+    color: var(--text-secondary);
   }
 
   html {
@@ -657,15 +767,15 @@
 
   /* Theme-aware text colors */
   .text-theme-primary {
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
   }
 
   .text-theme-secondary {
-    color: var(--text-secondary);
+    color: var(--text-secondary) !important;
   }
 
   .text-theme-muted {
-    color: var(--text-muted);
+    color: var(--text-muted) !important;
   }
 
   /* Theme-aware backgrounds */
@@ -679,6 +789,54 @@
 
   .bg-theme-card {
     background: var(--bg-card);
+  }
+
+  /* Light mode form elements */
+  .light input,
+  .light select,
+  .light textarea {
+    color: var(--text-primary) !important;
+  }
+
+  .light input::placeholder,
+  .light textarea::placeholder {
+    color: var(--text-placeholder) !important;
+  }
+
+  .light select option {
+    color: #1a1410;
+    background: #ffffff;
+  }
+
+  /* Light mode specific text fixes */
+  .light .text-white\/70,
+  .light .text-white\/80,
+  .light .text-white\/90 {
+    color: var(--text-secondary) !important;
+  }
+
+  .light .text-white\/50,
+  .light .text-white\/60 {
+    color: var(--text-muted) !important;
+  }
+
+  .light .text-white\/30,
+  .light .text-white\/40 {
+    color: var(--text-placeholder) !important;
+  }
+
+  /* Modal and dropdown text in light mode */
+  .light [role="dialog"],
+  .light [role="menu"],
+  .light .modal,
+  .light .dropdown {
+    color: var(--text-primary);
+  }
+
+  /* Card content text in light mode */
+  .light .card-body,
+  .light .card-content {
+    color: var(--text-secondary);
   }
 }
 

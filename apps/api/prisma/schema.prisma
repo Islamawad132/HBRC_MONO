@@ -109,6 +109,23 @@ enum InvoiceStatus {
   CANCELLED        // ملغي
 }
 
+// أنواع معاملات المحفظة
+enum WalletTransactionType {
+  DEPOSIT          // إيداع/شحن رصيد
+  WITHDRAWAL       // سحب
+  PURCHASE         // شراء من المحفظة
+  REFUND           // استرداد
+  ADJUSTMENT       // تعديل يدوي
+}
+
+// حالة معاملة المحفظة
+enum WalletTransactionStatus {
+  PENDING          // قيد الانتظار
+  COMPLETED        // مكتملة
+  FAILED           // فشلت
+  CANCELLED        // ملغاة
+}
+
 // ============================================
 // CUSTOMERS (العملاء الخارجيون)
 // ============================================
@@ -153,6 +170,8 @@ model Customer {
   requests      ServiceRequest[]
   invoices      Invoice[]
   payments      Payment[]
+  publicationPurchases PublicationPurchase[]
+  wallet        Wallet?
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -1079,5 +1098,284 @@ model AuditLog {
   @@index([userId, userType])
   @@index([entity, entityId])
   @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================
+// PUBLICATIONS MODULE (النشر الرقمي للكودات)
+// ============================================
+
+enum PublicationType {
+  CODE              // كود مصري
+  SPECIFICATION     // مواصفة قياسية
+  GUIDE             // دليل فني
+  RESEARCH          // بحث علمي
+  PUBLICATION       // مطبوعة
+  OTHER             // أخرى
+}
+
+enum PublicationStatus {
+  DRAFT             // مسودة
+  PUBLISHED         // منشور
+  ARCHIVED          // مؤرشف
+}
+
+enum PurchaseType {
+  FULL_DOWNLOAD     // تحميل كامل
+  PART_DOWNLOAD     // تحميل جزء
+  VIEW_ONCE         // تصفح مرة واحدة
+  VIEW_LIMITED      // تصفح محدود بوقت
+  VIEW_PERMANENT    // تصفح دائم
+  PHYSICAL_COPY     // نسخة ورقية
+}
+
+enum PublicationPurchaseStatus {
+  PENDING           // في انتظار الدفع
+  PAID              // تم الدفع
+  DELIVERED         // تم التسليم
+  CANCELLED         // ملغي
+  REFUNDED          // مسترد
+}
+
+// فئات المنشورات
+model PublicationCategory {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  name            String          // English name
+  nameAr          String          // Arabic name
+  description     String?         // English description
+  descriptionAr   String?         // Arabic description
+
+  // Hierarchy
+  parentId        String?
+  parent          PublicationCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        PublicationCategory[] @relation("CategoryHierarchy")
+
+  // Categorization
+  code            String          @unique // e.g., "CAT-001"
+  sortOrder       Int             @default(0)
+
+  // Status
+  isActive        Boolean         @default(true)
+
+  // Relations
+  publications    Publication[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("publication_categories")
+  @@index([parentId])
+  @@index([isActive])
+}
+
+// المنشورات والكودات
+model Publication {
+  id              String          @id @default(uuid())
+
+  // Basic Info (bilingual)
+  title           String          // English title
+  titleAr         String          // Arabic title
+  description     String?         // English description
+  descriptionAr   String?         // Arabic description
+  keywords        String?         // كلمات مفتاحية للبحث
+
+  // Publication Details
+  type            PublicationType @default(CODE)
+  code            String          @unique // رقم الكود e.g., "ECP-201"
+  partNumber      String?         // رقم الجزء
+  partName        String?         // اسم الجزء (English)
+  partNameAr      String?         // اسم الجزء (Arabic)
+  editionNumber   Int             @default(1) // رقم الطبعة
+  editionYear     Int?            // سنة الإصدار
+  editionDate     DateTime?       // تاريخ الإصدار
+
+  // Category
+  categoryId      String
+  category        PublicationCategory @relation(fields: [categoryId], references: [id])
+
+  // File Info
+  filePath        String          // مسار ملف PDF
+  fileSize        Int?            // حجم الملف بالبايت
+  pageCount       Int?            // عدد الصفحات
+  previewPath     String?         // مسار ملف العينة/المعاينة
+
+  // Thumbnail/Cover
+  coverImage      String?         // صورة الغلاف
+
+  // Pricing (Simple for now)
+  price           Decimal         @db.Decimal(10, 2) // سعر التحميل الكامل
+  partPrice       Decimal?        @db.Decimal(10, 2) // سعر الجزء
+  viewPrice       Decimal?        @db.Decimal(10, 2) // سعر التصفح
+  physicalPrice   Decimal?        @db.Decimal(10, 2) // سعر النسخة الورقية
+  currency        String          @default("EGP")
+
+  // Status
+  status          PublicationStatus @default(DRAFT)
+  isActive        Boolean         @default(true)
+  isFeatured      Boolean         @default(false) // عرض في الصفحة الرئيسية
+
+  // Stats
+  viewCount       Int             @default(0)
+  downloadCount   Int             @default(0)
+  purchaseCount   Int             @default(0)
+
+  // Relations
+  purchases       PublicationPurchase[]
+
+  // Metadata
+  createdById     String          // من أضاف المنشور
+  createdByType   String          // 'employee'
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("publications")
+  @@index([categoryId])
+  @@index([type])
+  @@index([status])
+  @@index([isActive])
+  @@index([code])
+}
+
+// مشتريات العملاء من المنشورات
+model PublicationPurchase {
+  id              String          @id @default(uuid())
+  purchaseNumber  String          @unique // e.g., "PUB-2024-001"
+
+  // Customer
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+
+  // Publication
+  publicationId   String
+  publication     Publication     @relation(fields: [publicationId], references: [id])
+
+  // Purchase Details
+  purchaseType    PurchaseType    @default(FULL_DOWNLOAD)
+  status          PublicationPurchaseStatus @default(PENDING)
+
+  // Pricing
+  price           Decimal         @db.Decimal(10, 2)
+  currency        String          @default("EGP")
+
+  // Payment
+  paymentMethod   PaymentMethod?
+  paymentId       String?         // رقم المعاملة من بوابة الدفع
+  paidAt          DateTime?
+
+  // Access Control (Simple for now - can enhance later)
+  downloadCount   Int             @default(0) // عدد مرات التحميل
+  maxDownloads    Int             @default(3) // الحد الأقصى للتحميل
+  expiresAt       DateTime?       // تاريخ انتهاء الصلاحية
+  lastAccessedAt  DateTime?
+
+  // For physical copies
+  shippingAddress String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("publication_purchases")
+  @@index([customerId])
+  @@index([publicationId])
+  @@index([status])
+  @@index([purchaseNumber])
+}
+
+// ============================================
+// WALLET (المحفظة الإلكترونية)
+// ============================================
+// محفظة العميل - كل عميل له محفظة واحدة
+model Wallet {
+  id              String          @id @default(uuid())
+  
+  // Customer - One to One
+  customerId      String          @unique
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  
+  // Balance
+  balance         Decimal         @default(0) @db.Decimal(12, 2) // الرصيد الحالي
+  currency        String          @default("EGP")
+  
+  // Limits (optional)
+  maxBalance      Decimal?        @db.Decimal(12, 2) // الحد الأقصى للرصيد
+  minBalance      Decimal         @default(0) @db.Decimal(12, 2) // الحد الأدنى
+  
+  // Status
+  isActive        Boolean         @default(true)
+  isFrozen        Boolean         @default(false) // تجميد المحفظة
+  frozenAt        DateTime?
+  frozenReason    String?
+  
+  // Stats
+  totalDeposits   Decimal         @default(0) @db.Decimal(12, 2) // إجمالي الإيداعات
+  totalWithdrawals Decimal        @default(0) @db.Decimal(12, 2) // إجمالي السحوبات
+  totalPurchases  Decimal         @default(0) @db.Decimal(12, 2) // إجمالي المشتريات
+  
+  // Relations
+  transactions    WalletTransaction[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@map("wallets")
+  @@index([customerId])
+  @@index([isActive])
+}
+
+// معاملات المحفظة - سجل كامل لجميع العمليات
+model WalletTransaction {
+  id              String          @id @default(uuid())
+  transactionNumber String        @unique // e.g., "WTX-2024-001"
+  
+  // Wallet
+  walletId        String
+  wallet          Wallet          @relation(fields: [walletId], references: [id])
+  
+  // Transaction Type
+  type            WalletTransactionType
+  status          WalletTransactionStatus @default(PENDING)
+  
+  // Amount
+  amount          Decimal         @db.Decimal(12, 2) // المبلغ (موجب دائماً)
+  balanceBefore   Decimal         @db.Decimal(12, 2) // الرصيد قبل العملية
+  balanceAfter    Decimal         @db.Decimal(12, 2) // الرصيد بعد العملية
+  currency        String          @default("EGP")
+  
+  // Description
+  description     String?         // وصف العملية بالإنجليزية
+  descriptionAr   String?         // وصف العملية بالعربية
+  
+  // Reference (for linking to other entities)
+  referenceType   String?         // 'publication_purchase', 'service_payment', 'deposit', etc.
+  referenceId     String?         // ID of the related entity
+  
+  // Payment Gateway Info (for deposits)
+  paymentMethod   PaymentMethod?  // طريقة الدفع للشحن
+  paymentGateway  String?         // 'paymob', 'fawry', etc.
+  externalTransactionId String?   // رقم المعاملة من بوابة الدفع
+  
+  // Metadata
+  metadata        Json?           // بيانات إضافية
+  ipAddress       String?         // عنوان IP
+  userAgent       String?         // متصفح المستخدم
+  
+  // Processing
+  processedAt     DateTime?
+  failureReason   String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@map("wallet_transactions")
+  @@index([walletId])
+  @@index([type])
+  @@index([status])
+  @@index([referenceType, referenceId])
+  @@index([transactionNumber])
   @@index([createdAt])
 }

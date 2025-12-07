@@ -35,6 +35,13 @@ import { ServicesCatalogPage } from '../pages/customer/ServicesCatalogPage';
 import { NewRequestPage } from '../pages/customer/NewRequestPage';
 import { RequestDetailsPage } from '../pages/customer/RequestDetailsPage';
 import { PaymentPage } from '../pages/customer/PaymentPage';
+import { PublicationsCatalogPage } from '../pages/customer/PublicationsCatalogPage';
+import { MyPublicationsPage } from '../pages/customer/MyPublicationsPage';
+import { PaymentResultPage } from '../pages/customer/PaymentResultPage';
+import { WalletPage } from '../pages/customer/WalletPage';
+
+// Publications (Admin)
+import { PublicationsPage } from '../pages/publications/PublicationsPage';
 
 /**
  * Application routes configuration
@@ -136,6 +143,11 @@ export const router = createBrowserRouter([
         path: 'profile',
         element: <ProfilePage />,
       },
+      // Publications (Admin)
+      {
+        path: 'publications',
+        element: <PublicationsPage />,
+      },
       // Customer Portal Routes
       {
         path: 'customer-dashboard',
@@ -172,6 +184,37 @@ export const router = createBrowserRouter([
       {
         path: 'payment/:invoiceId',
         element: <PaymentPage />,
+      },
+      // Publications (Customer)
+      {
+        path: 'publications-catalog',
+        element: <PublicationsCatalogPage />,
+      },
+      {
+        path: 'my-publications',
+        element: <MyPublicationsPage />,
+      },
+      // Wallet
+      {
+        path: 'wallet',
+        element: <WalletPage />,
+      },
+      // Payment Result Pages
+      {
+        path: 'payment/result',
+        element: <PaymentResultPage />,
+      },
+      {
+        path: 'payment/success',
+        element: <PaymentResultPage />,
+      },
+      {
+        path: 'payment/pending',
+        element: <PaymentResultPage />,
+      },
+      {
+        path: 'payment/failed',
+        element: <PaymentResultPage />,
       },
     ],
   },

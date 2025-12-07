@@ -5,7 +5,8 @@ import { documentsService } from '../../services/documents.service';
 import type { Document } from '../../types/interfaces';
 import { DocumentType, getLabel } from '../../types/enums';
 import { toast } from 'sonner';
-import { DocumentModal } from '../../components/modals';
+import { DocumentModal, DeleteConfirmModal } from '../../components/modals';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   FileText,
   Search,
@@ -523,207 +524,175 @@ export function DocumentsPage() {
       )}
 
       {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('documents.uploadDocument')}</h2>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div
-              className="rounded-xl border-2 border-dashed border-white/20 p-8 text-center transition-colors hover:border-white/40"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                handleUpload(e.dataTransfer.files);
-              }}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => handleUpload(e.target.files)}
-              />
-              <Upload className="mx-auto mb-4 h-12 w-12 text-white/40" />
-              <p className="text-white/80">{t('documents.dragAndDrop')}</p>
-              <p className="mt-1 text-sm text-white/60">{t('documents.orClickToSelect')}</p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="mt-4 glass-button bg-gradient-to-r from-[#a0592b] to-[#f26522] px-6 py-2 text-white"
-              >
-                {uploading ? `${uploadProgress}%` : t('documents.selectFiles')}
-              </button>
-            </div>
-
-            {uploading && (
-              <div className="mt-4">
-                <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#a0592b] to-[#f26522] transition-all"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-center text-sm text-white/60">
-                  {t('documents.uploading')} {uploadProgress}%
-                </p>
-              </div>
-            )}
-          </div>
+      <Modal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        title={t('documents.uploadDocument')}
+        icon={Upload}
+        loading={uploading}
+      >
+        <div
+          className="rounded-xl border-2 border-dashed border-white/20 p-8 text-center transition-colors hover:border-white/40"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleUpload(e.dataTransfer.files);
+          }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => handleUpload(e.target.files)}
+          />
+          <Upload className="mx-auto mb-4 h-12 w-12 text-white/40" />
+          <p className="text-white/80">{t('documents.dragAndDrop')}</p>
+          <p className="mt-1 text-sm text-white/60">{t('documents.orClickToSelect')}</p>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="mt-4 glass-button bg-gradient-to-r from-[#a0592b] to-[#f26522] px-6 py-2 text-white"
+          >
+            {uploading ? `${uploadProgress}%` : t('documents.selectFiles')}
+          </button>
         </div>
-      )}
+
+        {uploading && (
+          <div className="mt-4">
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full bg-gradient-to-r from-[#a0592b] to-[#f26522] transition-all"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-center text-sm text-white/60">
+              {t('documents.uploading')} {uploadProgress}%
+            </p>
+          </div>
+        )}
+      </Modal>
 
       {/* View Modal */}
-      {showViewModal && selectedDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-lg p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('documents.documentDetails')}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedDocument(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        isOpen={showViewModal && !!selectedDocument}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedDocument(null);
+        }}
+        title={t('documents.documentDetails')}
+        icon={FileText}
+        size="lg"
+        footer={
+          <ModalFooter>
+            <button
+              onClick={() => {
+                setShowViewModal(false);
+                setSelectedDocument(null);
+              }}
+              className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-medium text-white transition-colors hover:bg-white/10"
+            >
+              {t('common.close')}
+            </button>
+            <button
+              onClick={() => selectedDocument && handleDownload(selectedDocument)}
+              className="flex-1 rounded-xl bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2.5 font-medium text-white transition-colors hover:opacity-90"
+            >
+              <Download className="mr-2 inline h-4 w-4" />
+              {t('documents.download')}
+            </button>
+          </ModalFooter>
+        }
+      >
+        {selectedDocument && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
+                {(() => {
+                  const FileIcon = getFileIcon(selectedDocument.mimeType);
+                  return <FileIcon className="h-8 w-8 text-white/60" />;
+                })()}
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">
+                  {language === 'ar' && selectedDocument.titleAr
+                    ? selectedDocument.titleAr
+                    : selectedDocument.title}
+                </p>
+                <p className="text-sm text-white/60">{selectedDocument.filename}</p>
+                <span
+                  className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeColors[selectedDocument.type]}`}
+                >
+                  {getLabel('DocumentType', selectedDocument.type, language)}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                  {(() => {
-                    const FileIcon = getFileIcon(selectedDocument.mimeType);
-                    return <FileIcon className="h-8 w-8 text-white/60" />;
-                  })()}
-                </div>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div className="flex items-center gap-3">
+                <HardDrive className="h-5 w-5 text-white/40" />
                 <div>
-                  <p className="text-lg font-medium text-white">
-                    {language === 'ar' && selectedDocument.titleAr
-                      ? selectedDocument.titleAr
-                      : selectedDocument.title}
-                  </p>
-                  <p className="text-sm text-white/60">{selectedDocument.filename}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeColors[selectedDocument.type]}`}
-                  >
-                    {getLabel('DocumentType', selectedDocument.type, language)}
-                  </span>
+                  <p className="text-xs text-white/40">{t('documents.size')}</p>
+                  <p className="text-white">{formatFileSize(selectedDocument.size)}</p>
                 </div>
               </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
-                <div className="flex items-center gap-3">
-                  <HardDrive className="h-5 w-5 text-white/40" />
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-white/40" />
+                <div>
+                  <p className="text-xs text-white/40">{t('documents.mimeType')}</p>
+                  <p className="text-white">{selectedDocument.mimeType}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-white/40" />
+                <div>
+                  <p className="text-xs text-white/40">{t('documents.uploadedAt')}</p>
+                  <p className="text-white">{formatDate(selectedDocument.createdAt)}</p>
+                </div>
+              </div>
+              {selectedDocument.description && (
+                <div className="flex items-start gap-3">
+                  <FileText className="mt-1 h-5 w-5 text-white/40" />
                   <div>
-                    <p className="text-xs text-white/40">{t('documents.size')}</p>
-                    <p className="text-white">{formatFileSize(selectedDocument.size)}</p>
+                    <p className="text-xs text-white/40">{t('documents.description')}</p>
+                    <p className="text-white">
+                      {language === 'ar' && selectedDocument.descriptionAr
+                        ? selectedDocument.descriptionAr
+                        : selectedDocument.description}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-white/40" />
-                  <div>
-                    <p className="text-xs text-white/40">{t('documents.mimeType')}</p>
-                    <p className="text-white">{selectedDocument.mimeType}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-white/40" />
-                  <div>
-                    <p className="text-xs text-white/40">{t('documents.uploadedAt')}</p>
-                    <p className="text-white">{formatDate(selectedDocument.createdAt)}</p>
-                  </div>
-                </div>
-                {selectedDocument.description && (
-                  <div className="flex items-start gap-3">
-                    <FileText className="mt-1 h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('documents.description')}</p>
-                      <p className="text-white">
-                        {language === 'ar' && selectedDocument.descriptionAr
-                          ? selectedDocument.descriptionAr
-                          : selectedDocument.description}
-                      </p>
-                    </div>
-                  </div>
+              )}
+              <div className="flex items-center gap-3">
+                {selectedDocument.isPublic ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-emerald-400" />
+                    <span className="text-emerald-400">{t('documents.public')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-5 w-5 text-amber-400" />
+                    <span className="text-amber-400">{t('documents.private')}</span>
+                  </>
                 )}
-                <div className="flex items-center gap-3">
-                  {selectedDocument.isPublic ? (
-                    <>
-                      <CheckCircle className="h-5 w-5 text-emerald-400" />
-                      <span className="text-emerald-400">{t('documents.public')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Clock className="h-5 w-5 text-amber-400" />
-                      <span className="text-amber-400">{t('documents.private')}</span>
-                    </>
-                  )}
-                </div>
               </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedDocument(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.close')}
-              </button>
-              <button
-                onClick={() => handleDownload(selectedDocument)}
-                className="glass-button bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2 text-white"
-              >
-                <Download className="mr-2 inline h-4 w-4" />
-                {t('documents.download')}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-              <Trash2 className="h-6 w-6 text-red-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">{t('documents.deleteConfirmTitle')}</h2>
-            <p className="mt-2 text-white/60">{t('documents.deleteConfirmMessage')}</p>
-            <p className="mt-2 font-medium text-white">{selectedDocument.title}</p>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedDocument(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="glass-button bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal && !!selectedDocument}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedDocument(null);
+        }}
+        onConfirm={handleDelete}
+        title={t('documents.deleteConfirmTitle')}
+        message={t('documents.deleteConfirmMessage')}
+        itemName={selectedDocument?.title}
+      />
 
       {/* Document Modal */}
       <DocumentModal

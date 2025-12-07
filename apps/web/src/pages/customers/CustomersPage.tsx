@@ -16,11 +16,9 @@ import {
   Users,
   Search,
   Filter,
-  Plus,
   Eye,
   Edit2,
   Trash2,
-  MoreVertical,
   Mail,
   Phone,
   Building2,
@@ -30,7 +28,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  RefreshCw,
   UserCheck,
   UserX,
   X,
@@ -186,27 +183,6 @@ export function CustomersPage() {
             {t('customers.title')}
           </h1>
           <p className="mt-1 text-sm text-theme-muted">{t('customers.subtitle')}</p>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={fetchCustomers}
-            className="glass-button flex items-center gap-2 px-4 py-2"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{t('common.refresh')}</span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedCustomer(null);
-              setShowCustomerModal(true);
-            }}
-            className="btn-premium flex items-center gap-2 px-4 py-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{t('customers.addCustomer')}</span>
-          </button>
         </div>
       </div>
 

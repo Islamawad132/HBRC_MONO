@@ -189,6 +189,16 @@ const initialPermissions = [
   { module: 'settings', action: 'read', description: 'View settings/lookup items' },
   { module: 'settings', action: 'update', description: 'Update settings/lookup items' },
   { module: 'settings', action: 'delete', description: 'Delete settings/lookup items' },
+
+  // Publications permissions (النشر الرقمي للكودات)
+  { module: 'publications', action: 'create', description: 'Create publications and categories' },
+  { module: 'publications', action: 'read', description: 'View publications' },
+  { module: 'publications', action: 'update', description: 'Update publications and upload files' },
+  { module: 'publications', action: 'delete', description: 'Delete publications' },
+
+  // Wallet permissions (المحفظة الإلكترونية)
+  { module: 'wallet', action: 'read', description: 'View customer wallets and transactions' },
+  { module: 'wallet', action: 'update', description: 'Adjust wallet balance and freeze/unfreeze' },
 ];
 
 async function main() {

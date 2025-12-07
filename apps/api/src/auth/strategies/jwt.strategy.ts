@@ -37,6 +37,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return {
         id: customer.id,
         email: customer.email,
+        name: customer.name,
+        phone: customer.phone,
         type: 'customer',
       };
     } else if (payload.type === 'employee') {

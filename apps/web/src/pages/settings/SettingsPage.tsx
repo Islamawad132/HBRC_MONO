@@ -28,10 +28,10 @@ import {
   Plus,
   Trash2,
   Eye,
-  X,
   Lock,
 } from 'lucide-react';
-import { RoleModal } from '../../components/modals';
+import { RoleModal, DeleteConfirmModal } from '../../components/modals';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 
 type SettingsTab = 'appearance' | 'notifications' | 'system' | 'roles' | 'permissions';
 
@@ -935,141 +935,127 @@ export function SettingsPage() {
       />
 
       {/* View Role Modal */}
-      {showViewModal && selectedRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{isRTL ? 'تفاصيل الدور' : 'Role Details'}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedRole(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Role Info */}
-              <div className="flex items-center gap-4">
-                <div className={`flex h-16 w-16 items-center justify-center rounded-xl ${selectedRole.isAdmin ? 'bg-amber-500/20' : 'bg-blue-500/20'}`}>
-                  {selectedRole.isAdmin ? <Crown className="h-8 w-8 text-amber-400" /> : <Shield className="h-8 w-8 text-blue-400" />}
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-white">{selectedRole.name}</p>
-                  <p className="text-sm text-white/60">{selectedRole.description || '-'}</p>
-                  {selectedRole.isAdmin && (
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-400">
-                      <Crown className="h-3 w-3" />
-                      {isRTL ? 'دور المسؤول - جميع الصلاحيات' : 'Admin Role - All Permissions'}
-                    </span>
-                  )}
-                </div>
+      <Modal
+        isOpen={showViewModal && !!selectedRole}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedRole(null);
+        }}
+        title={isRTL ? 'تفاصيل الدور' : 'Role Details'}
+        icon={Shield}
+        size="2xl"
+        footer={
+          <ModalFooter
+            onCancel={() => {
+              setShowViewModal(false);
+              setSelectedRole(null);
+            }}
+            cancelText={isRTL ? 'إغلاق' : 'Close'}
+            onConfirm={() => {
+              setShowViewModal(false);
+              setShowRoleModal(true);
+            }}
+            confirmText={isRTL ? 'تعديل' : 'Edit'}
+          />
+        }
+      >
+        {selectedRole && (
+          <div className="space-y-6">
+            {/* Role Info */}
+            <div className="flex items-center gap-4">
+              <div className={`flex h-16 w-16 items-center justify-center rounded-xl ${selectedRole.isAdmin ? 'bg-amber-500/20' : 'bg-blue-500/20'}`}>
+                {selectedRole.isAdmin ? <Crown className="h-8 w-8 text-amber-400" /> : <Shield className="h-8 w-8 text-blue-400" />}
               </div>
-
-              {/* Permissions */}
-              <div className="space-y-4">
-                <h3 className="flex items-center gap-2 font-medium text-white">
-                  <Key className="h-5 w-5 text-white/40" />
-                  {isRTL ? 'الصلاحيات' : 'Permissions'}
-                </h3>
-
-                {selectedRole.isAdmin ? (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-center">
-                    <Lock className="mx-auto mb-2 h-8 w-8 text-amber-400" />
-                    <p className="text-amber-400">
-                      {isRTL ? 'دور المسؤول يملك جميع الصلاحيات تلقائياً' : 'Admin role has all permissions automatically'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {selectedRole.permissions && selectedRole.permissions.length > 0 ? (
-                      Object.entries(
-                        selectedRole.permissions.reduce((acc, perm) => {
-                          const module = perm.module || 'other';
-                          if (!acc[module]) acc[module] = [];
-                          acc[module].push(perm);
-                          return acc;
-                        }, {} as Record<string, Permission[]>)
-                      ).map(([module, perms]) => (
-                        <div key={module} className="rounded-lg bg-white/5 p-4">
-                          <h4 className="mb-3 font-medium text-white">{getModuleDisplayName(module)}</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {perms.map((perm) => (
-                              <span key={perm.id} className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-400">
-                                <Check className="h-3 w-3" />
-                                {getActionDisplayName(perm.action)}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-lg bg-white/5 p-4 text-center text-white/60">
-                        {isRTL ? 'لا توجد صلاحيات مخصصة لهذا الدور' : 'No permissions assigned to this role'}
-                      </div>
-                    )}
-                  </div>
+              <div>
+                <p className="text-lg font-medium text-white">{selectedRole.name}</p>
+                <p className="text-sm text-white/60">{selectedRole.description || '-'}</p>
+                {selectedRole.isAdmin && (
+                  <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+                    <Crown className="h-3 w-3" />
+                    {isRTL ? 'دور المسؤول - جميع الصلاحيات' : 'Admin Role - All Permissions'}
+                  </span>
                 )}
               </div>
+            </div>
 
-              {/* Stats */}
-              <div className="flex items-center gap-4 rounded-lg bg-white/5 p-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-white/40" />
-                  <span className="text-white/60">{isRTL ? 'الموظفين:' : 'Employees:'}</span>
-                  <span className="font-medium text-white">{selectedRole.employeesCount || 0}</span>
+            {/* Permissions */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 font-medium text-white">
+                <Key className="h-5 w-5 text-white/40" />
+                {isRTL ? 'الصلاحيات' : 'Permissions'}
+              </h3>
+
+              {selectedRole.isAdmin ? (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-center">
+                  <Lock className="mx-auto mb-2 h-8 w-8 text-amber-400" />
+                  <p className="text-amber-400">
+                    {isRTL ? 'دور المسؤول يملك جميع الصلاحيات تلقائياً' : 'Admin role has all permissions automatically'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Key className="h-5 w-5 text-white/40" />
-                  <span className="text-white/60">{isRTL ? 'الصلاحيات:' : 'Permissions:'}</span>
-                  <span className="font-medium text-white">
-                    {selectedRole.isAdmin ? (isRTL ? 'الكل' : 'All') : selectedRole.permissions?.length || 0}
-                  </span>
+              ) : (
+                <div className="space-y-4">
+                  {selectedRole.permissions && selectedRole.permissions.length > 0 ? (
+                    Object.entries(
+                      selectedRole.permissions.reduce((acc, perm) => {
+                        const module = perm.module || 'other';
+                        if (!acc[module]) acc[module] = [];
+                        acc[module].push(perm);
+                        return acc;
+                      }, {} as Record<string, Permission[]>)
+                    ).map(([module, perms]) => (
+                      <div key={module} className="rounded-lg bg-white/5 p-4">
+                        <h4 className="mb-3 font-medium text-white">{getModuleDisplayName(module)}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {perms.map((perm) => (
+                            <span key={perm.id} className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-400">
+                              <Check className="h-3 w-3" />
+                              {getActionDisplayName(perm.action)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-lg bg-white/5 p-4 text-center text-white/60">
+                      {isRTL ? 'لا توجد صلاحيات مخصصة لهذا الدور' : 'No permissions assigned to this role'}
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-4 rounded-lg bg-white/5 p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-white/40" />
+                <span className="text-white/60">{isRTL ? 'الموظفين:' : 'Employees:'}</span>
+                <span className="font-medium text-white">{selectedRole.employeesCount || 0}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Key className="h-5 w-5 text-white/40" />
+                <span className="text-white/60">{isRTL ? 'الصلاحيات:' : 'Permissions:'}</span>
+                <span className="font-medium text-white">
+                  {selectedRole.isAdmin ? (isRTL ? 'الكل' : 'All') : selectedRole.permissions?.length || 0}
+                </span>
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedRole(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {isRTL ? 'إغلاق' : 'Close'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setShowRoleModal(true);
-                }}
-                className="glass-button bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2 text-white"
-              >
-                {isRTL ? 'تعديل' : 'Edit'}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-              <Trash2 className="h-6 w-6 text-red-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">{isRTL ? 'تأكيد الحذف' : 'Confirm Delete'}</h2>
-            <p className="mt-2 text-white/60">
-              {isRTL ? 'هل أنت متأكد من حذف هذا الدور؟' : 'Are you sure you want to delete this role?'}
-            </p>
-            <p className="mt-2 font-medium text-white">{selectedRole.name}</p>
-
-            {(selectedRole.employeesCount || 0) > 0 && (
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedRole(null);
+        }}
+        onConfirm={handleDeleteRole}
+        title={isRTL ? 'تأكيد الحذف' : 'Confirm Delete'}
+        message={
+          <>
+            {isRTL ? 'هل أنت متأكد من حذف هذا الدور؟' : 'Are you sure you want to delete this role?'}
+            {selectedRole && (selectedRole.employeesCount || 0) > 0 && (
               <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
                 <p className="text-sm text-amber-400">
                   {isRTL
@@ -1078,27 +1064,10 @@ export function SettingsPage() {
                 </p>
               </div>
             )}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedRole(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {isRTL ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                onClick={handleDeleteRole}
-                className="glass-button bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-              >
-                {isRTL ? 'حذف' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        }
+        itemName={selectedRole?.name}
+      />
     </div>
   );
 }

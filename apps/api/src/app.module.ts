@@ -21,6 +21,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AuditModule } from './audit/audit.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SettingsModule } from './settings/settings.module';
+import { PublicationsModule } from './publications/publications.module';
+import { PaymobModule } from './paymob/paymob.module';
+import { WalletModule } from './wallet/wallet.module';
 import { JwtAuthGuard } from './common/guards';
 
 @Module({
@@ -45,6 +48,9 @@ import { JwtAuthGuard } from './common/guards';
     AuditModule,
     DashboardModule,
     SettingsModule,
+    PublicationsModule,
+    PaymobModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [

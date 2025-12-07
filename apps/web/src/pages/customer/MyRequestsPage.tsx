@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../context/SettingsContext';
 import { requestsService } from '../../services/requests.service';
 import type { ServiceRequest } from '../../types/interfaces';
-import { RequestStatus, RequestPriority, getLabel } from '../../types/enums';
+import { RequestStatus, getLabel } from '../../types/enums';
 import { toast } from 'sonner';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   FileText,
   Search,
@@ -13,13 +14,11 @@ import {
   Plus,
   Clock,
   CheckCircle,
-  XCircle,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   X,
   Calendar,
-  Tag,
   User,
   DollarSign,
 } from 'lucide-react';
@@ -360,110 +359,101 @@ export function MyRequestsPage() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('myRequests.requestDetails')}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedRequest(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-[#a0592b]/20 to-[#f26522]/20">
-                  <FileText className="h-8 w-8 text-[#f26522]" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-white">#{selectedRequest.requestNumber}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedRequest.status]}`}
-                    >
-                      {getLabel('RequestStatus', selectedRequest.status, language)}
-                    </span>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${priorityColors[selectedRequest.priority]}`}
-                    >
-                      {getLabel('RequestPriority', selectedRequest.priority, language)}
-                    </span>
-                  </div>
-                </div>
+      <Modal
+        isOpen={showViewModal && !!selectedRequest}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedRequest(null);
+        }}
+        title={t('myRequests.requestDetails')}
+        icon={FileText}
+        size="lg"
+        footer={
+          <ModalFooter
+            onCancel={() => {
+              setShowViewModal(false);
+              setSelectedRequest(null);
+            }}
+            cancelText={t('common.close')}
+          />
+        }
+      >
+        {selectedRequest && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-[#a0592b]/20 to-[#f26522]/20">
+                <FileText className="h-8 w-8 text-[#f26522]" />
               </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
-                <div>
-                  <p className="text-xs text-white/40">{t('myRequests.service')}</p>
-                  <p className="text-white">
-                    {language === 'ar' && selectedRequest.service?.nameAr
-                      ? selectedRequest.service.nameAr
-                      : selectedRequest.service?.name}
-                  </p>
+              <div>
+                <p className="text-lg font-medium text-white">#{selectedRequest.requestNumber}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[selectedRequest.status]}`}
+                  >
+                    {getLabel('RequestStatus', selectedRequest.status, language)}
+                  </span>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${priorityColors[selectedRequest.priority]}`}
+                  >
+                    {getLabel('RequestPriority', selectedRequest.priority, language)}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-xs text-white/40">{t('myRequests.requestDate')}</p>
-                  <p className="text-white">{formatDate(selectedRequest.createdAt)}</p>
-                </div>
-                {selectedRequest.expectedCompletionDate && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.expectedDate')}</p>
-                    <p className="text-white">{formatDate(selectedRequest.expectedCompletionDate)}</p>
-                  </div>
-                )}
-                {selectedRequest.estimatedPrice && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.estimatedPrice')}</p>
-                    <p className="text-white">{formatCurrency(selectedRequest.estimatedPrice)}</p>
-                  </div>
-                )}
-                {selectedRequest.finalPrice && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.finalPrice')}</p>
-                    <p className="text-emerald-400 font-medium">{formatCurrency(selectedRequest.finalPrice)}</p>
-                  </div>
-                )}
-                {selectedRequest.description && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.description')}</p>
-                    <p className="text-white">{selectedRequest.description}</p>
-                  </div>
-                )}
-                {selectedRequest.notes && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.notes')}</p>
-                    <p className="text-white">{selectedRequest.notes}</p>
-                  </div>
-                )}
-                {selectedRequest.assignedEmployee && (
-                  <div>
-                    <p className="text-xs text-white/40">{t('myRequests.assignedTo')}</p>
-                    <p className="text-white">{selectedRequest.assignedEmployee.user.name}</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedRequest(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.close')}
-              </button>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div>
+                <p className="text-xs text-white/40">{t('myRequests.service')}</p>
+                <p className="text-white">
+                  {language === 'ar' && selectedRequest.service?.nameAr
+                    ? selectedRequest.service.nameAr
+                    : selectedRequest.service?.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40">{t('myRequests.requestDate')}</p>
+                <p className="text-white">{formatDate(selectedRequest.createdAt)}</p>
+              </div>
+              {selectedRequest.expectedCompletionDate && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.expectedDate')}</p>
+                  <p className="text-white">{formatDate(selectedRequest.expectedCompletionDate)}</p>
+                </div>
+              )}
+              {selectedRequest.estimatedPrice && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.estimatedPrice')}</p>
+                  <p className="text-white">{formatCurrency(selectedRequest.estimatedPrice)}</p>
+                </div>
+              )}
+              {selectedRequest.finalPrice && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.finalPrice')}</p>
+                  <p className="text-emerald-400 font-medium">{formatCurrency(selectedRequest.finalPrice)}</p>
+                </div>
+              )}
+              {selectedRequest.description && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.description')}</p>
+                  <p className="text-white">{selectedRequest.description}</p>
+                </div>
+              )}
+              {selectedRequest.notes && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.notes')}</p>
+                  <p className="text-white">{selectedRequest.notes}</p>
+                </div>
+              )}
+              {selectedRequest.assignedEmployee && (
+                <div>
+                  <p className="text-xs text-white/40">{t('myRequests.assignedTo')}</p>
+                  <p className="text-white">{selectedRequest.assignedEmployee.user.name}</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

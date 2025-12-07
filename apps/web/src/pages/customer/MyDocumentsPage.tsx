@@ -5,6 +5,7 @@ import { documentsService } from '../../services/documents.service';
 import type { Document } from '../../types/interfaces';
 import { DocumentType, getLabel } from '../../types/enums';
 import { toast } from 'sonner';
+import { Modal, ModalFooter } from '../../components/ui/Modal';
 import {
   FileText,
   Search,
@@ -322,97 +323,92 @@ export function MyDocumentsPage() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-lg p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">{t('myDocuments.documentDetails')}</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedDocument(null);
-                }}
-                className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        isOpen={showViewModal && !!selectedDocument}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedDocument(null);
+        }}
+        title={t('myDocuments.documentDetails')}
+        icon={FileText}
+        size="lg"
+        footer={
+          <ModalFooter>
+            <button
+              onClick={() => {
+                setShowViewModal(false);
+                setSelectedDocument(null);
+              }}
+              className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-medium text-white transition-colors hover:bg-white/10"
+            >
+              {t('common.close')}
+            </button>
+            <button
+              onClick={() => selectedDocument && handleDownload(selectedDocument)}
+              className="flex-1 rounded-xl bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2.5 font-medium text-white transition-colors hover:opacity-90"
+            >
+              <Download className="mr-2 inline h-4 w-4" />
+              {t('myDocuments.download')}
+            </button>
+          </ModalFooter>
+        }
+      >
+        {selectedDocument && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
+                {(() => {
+                  const FileIcon = getFileIcon(selectedDocument.mimeType);
+                  return <FileIcon className="h-8 w-8 text-white/60" />;
+                })()}
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">
+                  {language === 'ar' && selectedDocument.titleAr
+                    ? selectedDocument.titleAr
+                    : selectedDocument.title}
+                </p>
+                <p className="text-sm text-white/60">{selectedDocument.filename}</p>
+                <span
+                  className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeColors[selectedDocument.type]}`}
+                >
+                  {getLabel('DocumentType', selectedDocument.type, language)}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                  {(() => {
-                    const FileIcon = getFileIcon(selectedDocument.mimeType);
-                    return <FileIcon className="h-8 w-8 text-white/60" />;
-                  })()}
-                </div>
+            <div className="grid gap-4 rounded-lg bg-white/5 p-4">
+              <div className="flex items-center gap-3">
+                <HardDrive className="h-5 w-5 text-white/40" />
                 <div>
-                  <p className="text-lg font-medium text-white">
-                    {language === 'ar' && selectedDocument.titleAr
-                      ? selectedDocument.titleAr
-                      : selectedDocument.title}
-                  </p>
-                  <p className="text-sm text-white/60">{selectedDocument.filename}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeColors[selectedDocument.type]}`}
-                  >
-                    {getLabel('DocumentType', selectedDocument.type, language)}
-                  </span>
+                  <p className="text-xs text-white/40">{t('myDocuments.size')}</p>
+                  <p className="text-white">{formatFileSize(selectedDocument.size)}</p>
                 </div>
               </div>
-
-              <div className="grid gap-4 rounded-lg bg-white/5 p-4">
-                <div className="flex items-center gap-3">
-                  <HardDrive className="h-5 w-5 text-white/40" />
-                  <div>
-                    <p className="text-xs text-white/40">{t('myDocuments.size')}</p>
-                    <p className="text-white">{formatFileSize(selectedDocument.size)}</p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-white/40" />
+                <div>
+                  <p className="text-xs text-white/40">{t('myDocuments.uploadedAt')}</p>
+                  <p className="text-white">{formatDate(selectedDocument.createdAt)}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-white/40" />
-                  <div>
-                    <p className="text-xs text-white/40">{t('myDocuments.uploadedAt')}</p>
-                    <p className="text-white">{formatDate(selectedDocument.createdAt)}</p>
-                  </div>
-                </div>
-                {selectedDocument.description && (
-                  <div className="flex items-start gap-3">
-                    <FileText className="mt-1 h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-xs text-white/40">{t('myDocuments.description')}</p>
-                      <p className="text-white">
-                        {language === 'ar' && selectedDocument.descriptionAr
-                          ? selectedDocument.descriptionAr
-                          : selectedDocument.description}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedDocument(null);
-                }}
-                className="glass-button px-4 py-2 text-white/70 hover:text-white"
-              >
-                {t('common.close')}
-              </button>
-              <button
-                onClick={() => handleDownload(selectedDocument)}
-                className="glass-button flex items-center gap-2 bg-gradient-to-r from-[#a0592b] to-[#f26522] px-4 py-2 text-white"
-              >
-                <Download className="h-4 w-4" />
-                {t('myDocuments.download')}
-              </button>
+              {selectedDocument.description && (
+                <div className="flex items-start gap-3">
+                  <FileText className="mt-1 h-5 w-5 text-white/40" />
+                  <div>
+                    <p className="text-xs text-white/40">{t('myDocuments.description')}</p>
+                    <p className="text-white">
+                      {language === 'ar' && selectedDocument.descriptionAr
+                        ? selectedDocument.descriptionAr
+                        : selectedDocument.description}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }
