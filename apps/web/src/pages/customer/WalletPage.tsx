@@ -30,11 +30,17 @@ import {
   ChevronRight,
   History,
 } from 'lucide-react';
+import { ComingSoon } from '../../components/ui';
 
 export function WalletPage() {
+  const [isPublished] = useState(false); // Set to true when ready to publish
   const { t } = useTranslation();
   const { language } = useSettings();
   const isRTL = language === 'ar';
+
+  if (!isPublished) {
+    return <ComingSoon developPercentage="60%" />;
+  }
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);

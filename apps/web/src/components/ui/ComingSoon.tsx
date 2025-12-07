@@ -10,6 +10,7 @@ interface ComingSoonProps {
   showNotifyButton?: boolean;
   icon?: React.ReactNode;
   estimatedDate?: string;
+  developPercentage?: string;
 }
 
 const PARTICLES = [
@@ -37,6 +38,7 @@ export function ComingSoon({
   showNotifyButton = false,
   icon,
   estimatedDate,
+  developPercentage = '75%',
 }: ComingSoonProps) {
   const { t } = useTranslation();
   const { language } = useSettings();
@@ -44,7 +46,7 @@ export function ComingSoon({
   const isRTL = language === 'ar';
 
   return (
-    <div className="relative flex min-h-[60vh] items-center justify-center overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="relative flex min-h-[60vh] h-full items-center justify-center overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Animated Background Elements */}
       <div className="pointer-events-none absolute inset-0">
         {/* Floating Orbs */}
@@ -155,12 +157,12 @@ export function ComingSoon({
         <div className="mt-12">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-theme-muted">{t('comingSoon.progress')}</span>
-            <span className="font-medium text-[#d4a84b]">75%</span>
+            <span className="font-medium text-[#d4a84b]">{developPercentage}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div 
               className="h-full rounded-full bg-gradient-to-r from-[#a0592b] via-[#f26522] to-[#d4a84b] transition-all duration-1000"
-              style={{ width: '75%' }}
+              style={{ width: developPercentage }}
             />
           </div>
           <p className="mt-2 text-xs text-theme-muted">{t('comingSoon.almostThere')}</p>

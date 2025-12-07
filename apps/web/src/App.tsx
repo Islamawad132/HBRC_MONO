@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { router } from './routes';
@@ -33,9 +35,21 @@ function ToasterWithDirection() {
   );
 }
 
+// Dynamic document title based on language
+function DocumentTitle() {
+  const { t } = useTranslation();
+  
+  useEffect(() => {
+    document.title = t('app.title');
+  }, [t]);
+  
+  return null;
+}
+
 function AppContent() {
   return (
     <>
+      <DocumentTitle />
       <RouterProvider router={router} />
       <ToasterWithDirection />
     </>

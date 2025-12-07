@@ -1,4 +1,8 @@
 {
+  "app": {
+    "title": "Housing and Building Research Center",
+    "shortTitle": "HBRC"
+  },
   "comingSoon": {
     "title": "Coming Soon",
     "description": "We're working hard to bring you this new feature. Stay tuned for updates!",

@@ -42,6 +42,7 @@ import {
   Archive,
   FileUp,
 } from 'lucide-react';
+import { ComingSoon } from '../../components/ui';
 
 // Status colors
 const statusColors: Record<PublicationStatus, { bg: string; text: string; border: string }> = {
@@ -78,9 +79,14 @@ const statusLabels: Record<PublicationStatus, { en: string; ar: string }> = {
 };
 
 export function PublicationsPage() {
+  const [isPublished] = useState(false); // Set to true when ready to publish
   const { t } = useTranslation();
   const { language } = useSettings();
   const isRTL = language === 'ar';
+
+  if (!isPublished) {
+    return <ComingSoon developPercentage="40%" />;
+  }
 
   // State
   const [publications, setPublications] = useState<Publication[]>([]);

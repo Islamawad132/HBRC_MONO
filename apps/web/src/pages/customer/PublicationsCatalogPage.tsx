@@ -34,6 +34,7 @@ import {
   FlaskConical,
   ChevronDown,
 } from 'lucide-react';
+import { ComingSoon } from '../../components/ui';
 
 // Type icons
 const typeIcons: Record<PublicationType, React.ReactNode> = {
@@ -76,6 +77,7 @@ const purchaseTypeLabels: Record<PurchaseType, { en: string; ar: string }> = {
 };
 
 export function PublicationsCatalogPage() {
+  const [isPublished] = useState(false); // Set to true when ready to publish
   const { t } = useTranslation();
   const { language } = useSettings();
   const isRTL = language === 'ar';
@@ -193,6 +195,10 @@ export function PublicationsCatalogPage() {
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-[#f26522]" />
       </div>
     );
+  }
+
+  if (!isPublished) {
+    return <ComingSoon developPercentage="50%" />;
   }
 
   return (
