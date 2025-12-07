@@ -50,11 +50,14 @@ FROM node:22-alpine AS api
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache dumb-init openssl
+RUN apk add --no-cache dumb-init openssl wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
+
+# Create uploads directory
+RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
 
 # Copy built API and dependencies
 COPY --from=api-builder --chown=nestjs:nodejs /app/node_modules ./node_modules
@@ -73,8 +76,8 @@ USER nestjs
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
 # Start API
 ENTRYPOINT ["dumb-init", "--"]
@@ -98,6 +101,10 @@ RUN npm ci --workspace=web --legacy-peer-deps
 FROM node:22-alpine AS web-builder
 WORKDIR /app
 
+# Build argument for API URL (must be set at build time for Vite)
+ARG VITE_API_URL=http://localhost:3000
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copy dependencies
 COPY --from=web-deps /app/node_modules ./node_modules
 COPY --from=web-deps /app/apps/web/node_modules ./apps/web/node_modules
@@ -105,7 +112,7 @@ COPY --from=web-deps /app/apps/web/node_modules ./apps/web/node_modules
 # Copy source code
 COPY . .
 
-# Build frontend
+# Build frontend with API URL
 WORKDIR /app/apps/web
 RUN npm run build
 

@@ -5,6 +5,14 @@
 # ================================
 # Pull from GitHub and build on server
 # Usage: ./deploy.sh
+#
+# Required: Create .env.production on server with:
+#   - DB_PASSWORD
+#   - JWT_SECRET
+#   - FRONTEND_URL (e.g., http://your-server-ip:5173)
+#   - VITE_API_URL (e.g., http://your-server-ip:3000)
+#   - MAIL_* settings (optional)
+#   - PAYMOB_* settings (for payments)
 
 set -e  # Exit on error
 
@@ -106,11 +114,55 @@ echo "  🐳 Building Docker Images"
 echo "================================================"
 
 # Build images using docker-compose
+# Check if .env.production exists
+if [ ! -f ".env.production" ]; then
+    echo "❌ .env.production not found!"
+    echo "ℹ️  Creating template .env.production file..."
+    cat > .env.production << 'ENVEOF'
+# Database
+DB_PASSWORD=your-secure-db-password
+
+# JWT (generate with: openssl rand -base64 32)
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=7d
+
+# URLs - UPDATE THESE WITH YOUR SERVER IP/DOMAIN
+FRONTEND_URL=http://YOUR_SERVER_IP:5173
+VITE_API_URL=http://YOUR_SERVER_IP:3000
+
+# Email (optional - for password reset, notifications)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=
+MAIL_PASSWORD=
+MAIL_FROM=HBRC <noreply@hbrc.com>
+
+# Paymob Payment Gateway (get from Paymob Dashboard)
+PAYMOB_API_KEY=
+PAYMOB_SECRET_KEY=
+PAYMOB_PUBLIC_KEY=
+PAYMOB_HMAC_SECRET=
+PAYMOB_CARD_INTEGRATION_ID=
+PAYMOB_WALLET_INTEGRATION_ID=
+PAYMOB_KIOSK_INTEGRATION_ID=
+PAYMOB_RETURN_URL=http://YOUR_SERVER_IP:5173/payment/result
+PAYMOB_WEBHOOK_URL=http://YOUR_SERVER_IP:3000/paymob/webhook
+ENVEOF
+    echo "⚠️  Please edit .env.production with your actual values and run deploy again!"
+    exit 1
+fi
+
+echo "✅ .env.production found"
+
+# Get VITE_API_URL from .env.production for build args
+VITE_API_URL=\$(grep "^VITE_API_URL=" .env.production | cut -d'=' -f2)
+echo "ℹ️  Using VITE_API_URL=\${VITE_API_URL}"
+
 echo "🔨 Building API image..."
-docker compose build api
+docker compose --env-file .env.production build api
 
 echo "🔨 Building Web image..."
-docker compose build web
+docker compose --env-file .env.production build --build-arg VITE_API_URL=\${VITE_API_URL} web
 
 echo "✅ Images built successfully"
 
@@ -121,7 +173,7 @@ echo "================================================"
 
 # Stop old containers
 echo "🛑 Stopping old containers..."
-docker compose --env-file .env.production down
+docker compose --env-file .env.production down --remove-orphans
 
 # Start new containers
 echo "🚀 Starting new containers..."
