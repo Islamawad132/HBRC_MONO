@@ -66,6 +66,10 @@ COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/node_modules ./api_n
 COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
 COPY --chown=nestjs:nodejs apps/api/package*.json ./
 
+# Copy and setup entrypoint script
+COPY --chown=nestjs:nodejs apps/api/docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 # Setup NODE_PATH
 ENV NODE_PATH=/app/node_modules:/app/api_node_modules
 
@@ -79,9 +83,9 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start API
+# Start API with migrations
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/src/main"]
+CMD ["./docker-entrypoint.sh"]
 
 # ================================
 # Stage 5: Web Dependencies
